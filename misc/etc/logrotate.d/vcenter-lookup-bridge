@@ -1,0 +1,14 @@
+# Logrotate file for vcenter-lookup-bridge
+
+/container/config/vcenter-lookup-bridge/log/*.log {
+    missingok
+    sharedscripts
+    create 644 root root
+    compress
+    daily
+    rotate 14
+    ifempty
+    dateext
+    dateformat _%Y%m%d
+}
+
