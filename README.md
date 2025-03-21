@@ -42,6 +42,9 @@ vcenter-lookup-bridge
 ├── docker-compose.override.yml.sample
 ├── docker-compose.yml
 ├── docs: other documents
+├── misc
+│    └── etc
+│         └── logrotate.d: logrotate setting
 └── pip.conf
 ```
 
