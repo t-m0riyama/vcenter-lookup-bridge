@@ -12,6 +12,8 @@ vCenter lookup Bridge API TODO
   - [x] 一覧の参照（タグ指定）
 * [ ] スナップショット
   - [ ] 一覧の参照（仮想マシンのインスタンスUUID指定）
+* [ ] クラスタ
+  - [ ] 一覧の参照
 
 * [x] ロギング
   - [x] ログファイル出力
@@ -21,7 +23,7 @@ vCenter lookup Bridge API TODO
   - [X] カスタマイズ可能なパラメータ（vCenter接続設定、ログファイルのパスなど）
 
 * [x] レスポンスのキャッシュ
-  - [ ] redisを利用したTTL付きキャッシュサポート
+  - [x] redisを利用したTTL付きキャッシュサポート
 
 * [x] パッケージング
   - [x] docker compose support
