@@ -1,0 +1,42 @@
+version: 1
+disable_existing_loggers: false
+formatters:
+  default:
+    # "()": uvicorn.logging.DefaultFormatter
+    format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+  access:
+    # "()": uvicorn.logging.AccessFormatter
+    format: '%(asctime)s - %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+
+handlers:
+  default:
+    formatter: default
+    class: logging.FileHandler
+    filename: ./log/error.log
+    encoding: utf-8
+  access:
+    formatter: access
+    class: logging.FileHandler
+    filename: ./log/access.log
+    encoding: utf-8
+
+loggers:
+  uvicorn.error:
+    level: DEBUG
+    handlers:
+      - default
+    propagate: no
+  uvicorn.access:
+    level: INFO
+    handlers:
+      - access
+    propagate: no
+
+root:
+  level: INFO
+  handlers:
+    - default
+  propagate: no
+

@@ -1,0 +1,56 @@
+# version: '3'
+
+services:
+  cache:
+    restart: always
+    image: redis:7.4.2
+    command:
+      - --loglevel warning
+      - --bind 0.0.0.0
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+    ports:
+      - 6379
+    environment:
+      - TZ=Asia/Tokyo
+    volumes:
+      - redis-data:/data:Z
+    networks:
+      - traefik-net
+
+  api:
+    restart: always
+    image: t-m0riyama/vcenter-lookup-bridge:latest
+    build:
+      context: ./
+    depends_on:
+      cache:
+        condition: service_healthy
+    #expose:
+    ports:
+      - 18000:8000
+    environment:
+      - TZ=Asia/Tokyo
+    volumes:
+      - ./app/log:/app/log
+      - ./app/config:/app/config
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vcenter_lookup_bridge.entrypoints=web-secure"
+      - "traefik.http.routers.vcenter_lookup_bridge.rule=PathPrefix(`/vcenter-lookup-bridge/`)"
+      - "traefik.http.routers.vcenter_lookup_bridge.service=vcenter_lookup_bridge"
+      - "traefik.http.services.vcenter_lookup_bridge.loadbalancer.server.port=8000"
+      #- traefik.http.routers.vcenter_lookup_bridge.tls=false
+      #- traefik.http.routers.vcenter_lookup_bridge.tls.certresolver=myresolver
+    networks:
+      - traefik-net
+
+volumes:
+  redis-data:
+
+networks:
+  traefik-net:
+    external: true

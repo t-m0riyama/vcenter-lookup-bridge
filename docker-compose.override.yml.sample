@@ -1,0 +1,38 @@
+services:
+  api:
+    environment:
+      # Redisサーバのホスト名（外部のRedisサーバを利用する場合のみ変更する）
+      #- VLB_CACHE_HOSTNAME=cache
+
+      # Redisサーバのポート番号（外部のRedisサーバを利用する場合のみ変更する）
+      #- VLB_CACHE_PORT=6379
+
+      # リクエストの結果をキャッシュする時間（秒）
+      - VLB_CACHE_EXPIRE_SECS=60
+
+      # Function logger 有効/無効
+      - VLB_FUNC_LOGGER_ENABLED=True
+
+      # Function logger の出力に引数を含める
+      - VLB_FUNC_LOGGER_ARGS_OUTPUT=False
+
+      # Function logger の出力に引数を含める際、各引数の最大長を制限する
+      - VLB_FUNC_LOGGER_ARGS_LENGTH_MAX=20
+
+      # ログを出力するディレクトリ
+      - VLB_LOG_DIR=/app/log
+
+      # ログのファイル名
+      - VLB_LOG_FILE=vcenter_lookup_bridge.log
+
+      # ログレベル
+      - VLB_LOG_LEVEL=INFO
+
+    #labels:
+      # traefik(リバースプロキシ)の機能により、BASIC認証を有効化します。デフォルトで、以下のユーザ名とパスワードに設定されます。
+      #   ユーザ名: apiuser、パスワード: P@ssw0rd
+      # traefik.http.middlewares.vcenter_lookup_bridge_auth.basicauth.usersの値は、htpassword形式の文字列です。
+      # 必要に応じて、変更してください。
+      # ex. $ htpasswd new_user new_password
+      #- "traefik.http.middlewares.vcenter_lookup_bridge_auth.basicauth.users=apiuser:$$apr1$$zFHk.cXh$$01OU2XMdDq/OjlunHPCCn/"
+      #- "traefik.http.routers.vcenter_lookup_bridge.middlewares=vcenter_lookup_bridge_auth"

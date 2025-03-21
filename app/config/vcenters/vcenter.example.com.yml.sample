@@ -1,0 +1,21 @@
+# vCenter Configurations
+
+# この設定の識別子
+#   config/vcenters配下の設定ファイル中でユニークな名前を付けること
+name: "your-vcenter"
+
+# vCenterのホスト名／IP
+hostname: "vcenter.example.com"
+# vCenterのポート番号
+port: 443
+# vCenter接続ユーザ名
+username: "ansible@vsphere.local"
+# vCenter接続パスワード
+password: "P@ssw0rd"
+# vCenterへのTLS接続時に証明書を検証するかどうかを指定
+#   公的認証期間の証明書を利用しない場合は、Falseを指定すること
+#   True: 検証する, False: 検証しない
+ignore_ssl_cert_verify: True
+# 仮想マシンフォルダを検索する際の親フォルダ
+#   このフォルダ配下の仮想マシンフォルダのみ、検索対象とする
+base_vm_folder: "D-V"

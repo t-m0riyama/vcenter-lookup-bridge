@@ -1,0 +1,11 @@
+{
+    "editor.formatOnSave": false,
+    "flake8.args": ["--config=.flake8"],
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        },
+    },
+    "isort.args":["--settings-file", ".isort.cfg"],
+}
