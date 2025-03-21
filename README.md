@@ -45,7 +45,7 @@ vcenter-lookup-bridge
 └── pip.conf
 ```
 
-## How to use / docker compose
+## How to setup / docker compose
 1. copy docker-compose.override.yml
 ```bash
 $ cp docker-compose.override.yml.sample docker-compose.override.yml
@@ -137,3 +137,11 @@ $ docker compose build
 ```bash
 $ docker compose up -d
 ```
+
+## How to use
+
+You can use the API by accessing the following URL.
+  http://your-server/api/v1/
+
+You can also view the API documentation by accessing the following URL in your browser.
+  http://your-server/api/v1/docs
