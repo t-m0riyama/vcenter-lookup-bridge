@@ -1,11 +1,12 @@
 import os
 import pathlib
 import sys
+import time
 from contextlib import asynccontextmanager
 
 import uvicorn
 import vcenter_lookup_bridge.vmware.instances as g
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from redis import asyncio as aioredis
@@ -14,6 +15,7 @@ from vcenter_lookup_bridge.utils.config_util import ConfigUtil
 from vcenter_lookup_bridge.utils.constants import Constants as cs
 from vcenter_lookup_bridge.utils.logging import Logging
 from vcenter_lookup_bridge.vmware.connector import Connector
+from vcenter_lookup_bridge.vmware.vcenter_config_manager import VCenterConfigManager
 
 # const
 LOG_DIR_DEFAULT = "./log"
@@ -77,6 +79,14 @@ app.include_router(api_router, prefix='/api/v1')
 log_dir = os.getenv("VLB_LOG_DIR", LOG_DIR_DEFAULT)
 log_file = os.getenv("VLB_LOG_FILE", LOG_FILE_DEFAULT)
 Logging.init(log_dir, log_file)
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    response.headers["X-Process-Time"] = str(process_time)
+    return response
 
 if __name__ == '__main__':
     # gunicorn、uvicornコマンドで実行する場合、以下設定は無視されます。
