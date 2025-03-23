@@ -1,9 +1,9 @@
+import vcenter_lookup_bridge.vmware.instances as g
 from pyVmomi import vim
-from vcenter_lookup_bridge.utils.logging import Logging
 from vcenter_lookup_bridge.schemas.datastore_parameter import DatastoreResponseSchema
+from vcenter_lookup_bridge.utils.logging import Logging
 from vcenter_lookup_bridge.vmware.host import Host
 from vcenter_lookup_bridge.vmware.tag import Tag
-import vcenter_lookup_bridge.vmware.instances as g
 
 
 class Datastore(object):

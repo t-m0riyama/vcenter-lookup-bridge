@@ -1,5 +1,6 @@
-from typing import List
+from typing import List, Optional
 
+from fastapi import HTTPException
 from pyVmomi import vim
 from vcenter_lookup_bridge.schemas.vm_parameter import VmResponseSchema
 from vcenter_lookup_bridge.utils.logging import Logging
@@ -35,13 +36,12 @@ class Vm(object):
 
                 if isinstance(vm, vim.VirtualMachine):
                     vm_config = cls._generate_vm_info(datacenter, vm_folder, vm)
-                    results.append( vm_config )
+                    results.append(vm_config)
                     vm_count += 1
         return results
 
     @classmethod
     def get_vm_by_instance_uuid(cls, content, instance_uuid: str) -> VmResponseSchema:
-        result = None
         datacenter = content.rootFolder.childEntity[0]
         search_index = content.searchIndex
 
@@ -52,13 +52,13 @@ class Vm(object):
             instanceUuid=True,
         )
 
-        if isinstance(vm, vim.VirtualMachine):
-            vm_config = cls._generate_vm_info(datacenter=datacenter, vm_folder=None, vm=vm)
-            result = vm_config
-        return result
+        if not isinstance(vm, vim.VirtualMachine):
+            raise HTTPException(status_code=404, detail="VM not found")
+
+        return cls._generate_vm_info(datacenter=datacenter, vm_folder=None, vm=vm)
 
     @classmethod
-    def _generate_vm_info(cls, datacenter, vm_folder, vm) -> VmResponseSchema:
+    def _generate_vm_info(cls, datacenter, vm_folder: Optional[str], vm) -> VmResponseSchema:
         disk_devices = []
         network_devices = []
         for device in vm.config.hardware.device:
@@ -81,16 +81,24 @@ class Vm(object):
                     }
                 )
 
-        vm_config = {
-                        "datacenter": datacenter.name,
-                        "cluster": vm.summary.runtime.host.parent.name,
-                        "esxiHostname": vm.summary.runtime.host.name,
-                        "hostname": vm.guest.hostName,
-                        "ipAddress": vm.guest.ipAddress,
-                        "vmFolder": vm_folder,
-                        "powerState": vm.summary.runtime.powerState,
-                        "diskDevices": disk_devices,
-                        "networkDevices": network_devices,
-                    }
-        vm_config.update(vars(vm.summary.config))
-        return vm_config
+        vm_info = {
+            "datacenter": datacenter.name,
+            "cluster": vm.summary.runtime.host.parent.name,
+            "esxiHostname": vm.summary.runtime.host.name,
+            "hostname": vm.guest.hostName,
+            "ipAddress": vm.guest.ipAddress,
+            "vmFolder": vm_folder,
+            "powerState": vm.summary.runtime.powerState,
+            "diskDevices": disk_devices,
+            "networkDevices": network_devices,
+            "uuid": vm.summary.config.uuid,
+            "instanceUuid": vm.summary.config.instanceUuid,
+            "name": vm.summary.config.name,
+            "numCpu": vm.summary.config.numCpu,
+            "memorySizeMB": vm.summary.config.memorySizeMB,
+            "template": vm.summary.config.template,
+            "vmPathName": vm.summary.config.vmPathName,
+            "guestFullName": vm.summary.config.guestFullName,
+            "hwVersion": vm.summary.config.hwVersion,
+        }
+        return VmResponseSchema(**vm_info)

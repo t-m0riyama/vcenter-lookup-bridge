@@ -1,7 +1,7 @@
 from pyVmomi import vim
-from vcenter_lookup_bridge.schemas.datastore_parameter import DatastoreResponseSchema
-from vcenter_lookup_bridge.vmware.helper import Helper
 from vcenter_lookup_bridge.utils.logging import Logging
+from vcenter_lookup_bridge.vmware.helper import Helper
+
 
 class Host(object):
 

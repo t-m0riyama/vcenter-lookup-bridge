@@ -1,7 +1,7 @@
-from vmware.vapi.vsphere.client import create_vsphere_client
 import requests
 import urllib3
 from vcenter_lookup_bridge.utils.logging import Logging
+from vmware.vapi.vsphere.client import create_vsphere_client
 
 # SSL関連の警告出力を抑制
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
