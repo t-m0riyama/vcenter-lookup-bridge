@@ -8,4 +8,12 @@
         },
     },
     "isort.args":["--settings-file", ".isort.cfg"],
+    "terminal.integrated.defaultProfile.osx": "zsh",
+    "terminal.integrated.shellIntegration.enabled": true,
+    "terminal.integrated.profiles.osx": {
+        "zsh": {
+            "path": "/bin/zsh",
+            "args": ["-l"]
+        }
+    }
 }
