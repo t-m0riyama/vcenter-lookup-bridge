@@ -4,12 +4,16 @@ from fastapi import HTTPException
 from pyVmomi import vim
 from vcenter_lookup_bridge.schemas.vm_parameter import VmResponseSchema
 from vcenter_lookup_bridge.utils.logging import Logging
+from vcenter_lookup_bridge.vmware.connector import Connector
 
 
 class Vm(object):
 
     @classmethod
-    def get_vms_by_vm_folders(cls, content, vm_folders: List[str], offset=0, max_results=100) -> list[VmResponseSchema]:
+    async def get_vms_by_vm_folders(cls, vcenter_name: str, vm_folders: List[str], offset=0, max_results=100) -> list[VmResponseSchema]:
+        # vCenter名からコンテンツを取得
+        content = await Connector.get_vmware_content()
+        
         results = []
         datacenter = content.rootFolder.childEntity[0]
         search_index = content.searchIndex
@@ -41,7 +45,10 @@ class Vm(object):
         return results
 
     @classmethod
-    def get_vm_by_instance_uuid(cls, content, instance_uuid: str) -> VmResponseSchema:
+    async def get_vm_by_instance_uuid(cls, vcenter_name: str, instance_uuid: str) -> VmResponseSchema:
+        # vCenter名からコンテンツを取得
+        content = await Connector.get_vmware_content()
+        
         datacenter = content.rootFolder.childEntity[0]
         search_index = content.searchIndex
 
