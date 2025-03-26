@@ -3,6 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path, Query
 from fastapi_cache.decorator import cache
+import vcenter_lookup_bridge.vmware.instances as g
 from vcenter_lookup_bridge.schemas.vm_parameter import VmResponseSchema, VmSearchSchema
 from vcenter_lookup_bridge.utils.logging import Logging
 from vcenter_lookup_bridge.vmware.connector import Connector
@@ -24,12 +25,12 @@ async def list_vms(
 ):
     vms = Vm.get_vms_by_vm_folders(
         content=content,
+        configs=g.vcenter_configurations,
         vm_folders=search_params.vm_folders,
         offset=search_params.offset,
         max_results=search_params.max_results,
     )
     return vms
-
 
 @router.get('/{vm_instance_uuid}', response_model=VmResponseSchema, description="インスタンスUUIDを指定して、単一の仮想マシンの情報を取得します。")
 @cache(expire=cache_expire_secs)

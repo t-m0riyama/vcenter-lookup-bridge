@@ -11,14 +11,21 @@ from vcenter_lookup_bridge.utils.logging import Logging
 class Vm(object):
 
     @classmethod
-    def get_vms_by_vm_folders(cls, content, vm_folders: List[str], offset=0, max_results=100) -> list[VmResponseSchema]:
+    def get_vms_by_vm_folders(cls, content, configs, vm_folders: List[str], offset=0, max_results=100) -> list[VmResponseSchema]:
         results = []
+
+        # TODO: 複数のvCenterに接続し、Service Instanceを複数利用する場合の処理を実装する
+        # 今回は1つ目のService Instanceのみ利用する
+        config_keys = list(configs.keys())
+        config = configs[config_keys[0]]
+
         datacenter = content.rootFolder.childEntity[0]
+        base_vm_folder = config['base_vm_folder']
         search_index = content.searchIndex
         vm_count = 0
 
         for vm_folder in vm_folders:
-            folder = search_index.FindByInventoryPath(f"/{datacenter.name}/vm/{vm_folder}/")
+            folder = search_index.FindByInventoryPath(f"/{datacenter.name}/vm/{base_vm_folder}/{vm_folder}/")
             if folder is None:
                 Logging.warning(f"仮想マシンフォルダ({vm_folder})が見つかりませんでした。")
                 continue
@@ -37,7 +44,7 @@ class Vm(object):
                     break
 
                 if isinstance(vm, vim.VirtualMachine):
-                    vm_config = cls._generate_vm_info(datacenter, vm_folder, vm)
+                    vm_config = cls._generate_vm_info(content=content, datacenter=datacenter, vm_folder=vm_folder, vm=vm)
                     results.append(vm_config)
                     vm_count += 1
         return results
@@ -57,13 +64,12 @@ class Vm(object):
         if not isinstance(vm, vim.VirtualMachine):
             raise HTTPException(status_code=404, detail="VM not found")
 
-        return cls._generate_vm_info(datacenter=datacenter, vm_folder=None, vm=vm)
+        return cls._generate_vm_info(content=content, datacenter=datacenter, vm_folder=None, vm=vm)
 
     @classmethod
-    def _generate_vm_info(cls, datacenter, vm_folder: Optional[str], vm) -> VmResponseSchema:
+    def _generate_vm_info(cls, content, datacenter, vm_folder: Optional[str], vm) -> VmResponseSchema:
         disk_devices = []
         network_devices = []
-        content = Connector.get_vmware_content()
         for device in vm.config.hardware.device:
             if isinstance(device, vim.vm.device.VirtualDisk):
                 disk_devices.append(
