@@ -9,9 +9,9 @@ services:
       - --bind 0.0.0.0
     healthcheck:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
-      interval: 3s
+      interval: 30s
       timeout: 5s
-      retries: 5
+      retries: 3
     ports:
       - 6379
     environment:
@@ -29,9 +29,13 @@ services:
     depends_on:
       cache:
         condition: service_healthy
-    #expose:
+    healthcheck:
+      test: [ "CMD", "/app/scripts/healthcheck.sh" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     ports:
-      - 18000:8000
+      - 8000
     environment:
       - TZ=Asia/Tokyo
     volumes:
