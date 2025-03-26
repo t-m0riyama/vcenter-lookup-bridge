@@ -7,6 +7,9 @@ services:
       # Redisサーバのポート番号（外部のRedisサーバを利用する場合のみ変更する）
       #- VLB_CACHE_PORT=6379
 
+      # ROOTパス（リバースプロキシは以下で動作させる場合に、変更する）
+      - VLB_ROOT_PATH=/vcenter-lookup-bridge
+
       # リクエストの結果をキャッシュする時間（秒）
       - VLB_CACHE_EXPIRE_SECS=60
 
