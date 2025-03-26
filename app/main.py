@@ -72,11 +72,9 @@ app = FastAPI(
     description='vCenter Lookup Bridge API',
     version='0.1.0',
     lifespan=lifespan,
-    root_path=f'{root_path}',
-    openapi_url='/api/v1/openapi.json',
-    docs_url='/api/v1/docs',
+    root_path=f'{root_path}/api/v1',
 )
-app.include_router(api_router, prefix='/api/v1')
+app.include_router(api_router)
 
 # Initialize Logging
 log_dir = os.getenv("VLB_LOG_DIR", LOG_DIR_DEFAULT)
