@@ -26,6 +26,7 @@ VLB_ADDRESS_DEFAULT = "0.0.0.0"
 VLB_PORT_DEFAULT = 8000
 VLB_CACHE_HOSTNAME_DEFAULT = "cache"
 VLB_CACHE_PORT_DEFAULT = 6379
+VLB_ROOT_PATH_DEFAULT = "/vcenter-lookup-bridge"
 
 
 g.vcenter_configurations = {}
@@ -64,13 +65,14 @@ async def lifespan(app: FastAPI):
     await redis.close()
     Logging.info("Shutdown completed.")
 
+root_path = os.getenv("VLB_ROOT_PATH", VLB_ROOT_PATH_DEFAULT)
 app = FastAPI(
     title='vCenter Lookup Bridge API',
     summary='vCenterに接続し、仮想マシン・データストア・ポートグループなどの情報を参照するAPIです。',
     description='vCenter Lookup Bridge API',
     version='0.1.0',
     lifespan=lifespan,
-    root_path='/vcenter-lookup-bridge',
+    root_path=f'{root_path}',
     openapi_url='/api/v1/openapi.json',
     docs_url='/api/v1/docs',
 )
