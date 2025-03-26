@@ -35,6 +35,8 @@ class Helper(object):
                         object_key_prefix = 'vim.Datastore'
                     case vim.Network:
                         object_key_prefix = 'vim.Network'
+                    case vim.dvs.DistributedVirtualPortgroup:
+                        object_key_prefix = 'vim.dvs.DistributedVirtualPortgroup'
 
                 if f"'{object_key_prefix}:{child_object._moId}'" == str(object_key):
                     obj = child_object

@@ -3,6 +3,8 @@ from typing import List, Optional
 from fastapi import HTTPException
 from pyVmomi import vim
 from vcenter_lookup_bridge.schemas.vm_parameter import VmResponseSchema
+from vcenter_lookup_bridge.vmware.connector import Connector
+from vcenter_lookup_bridge.vmware.helper import Helper
 from vcenter_lookup_bridge.utils.logging import Logging
 
 
@@ -61,6 +63,7 @@ class Vm(object):
     def _generate_vm_info(cls, datacenter, vm_folder: Optional[str], vm) -> VmResponseSchema:
         disk_devices = []
         network_devices = []
+        content = Connector.get_vmware_content()
         for device in vm.config.hardware.device:
             if isinstance(device, vim.vm.device.VirtualDisk):
                 disk_devices.append(
@@ -71,11 +74,20 @@ class Vm(object):
                     }
                 )
             elif isinstance(device, vim.vm.device.VirtualVmxnet3):
+                if isinstance(device.backing, vim.vm.device.VirtualEthernetCard.DistributedVirtualPortBackingInfo):
+                    portgroup_name = Helper.get_object_by_object_key(
+                        content=content,
+                        vimtype=vim.dvs.DistributedVirtualPortgroup,
+                        object_key=device.backing.port.portgroupKey,
+                    )
+                else:
+                    portgroup_name = device.backing.deviceName
+
                 network_devices.append(
                     {
                         "label": device.deviceInfo.label,
                         "macAddress": device.macAddress,
-                        "portgroup": device.backing.deviceName,
+                        "portgroup": portgroup_name,
                         "connected": device.connectable.connected,
                         "startConnected": device.connectable.startConnected,
                     }
