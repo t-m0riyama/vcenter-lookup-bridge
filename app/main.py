@@ -42,6 +42,7 @@ async def lifespan(app: FastAPI):
         for vcenter_config in pathlib.Path(f'{CONFIG_VCENTER_DIR_DEFAULT}').iterdir():
             if vcenter_config.suffix == ".yml":
                 config = ConfigUtil.parse_config(f'{vcenter_config}')
+                Logging.info(f'vCenter Configuration Loaded: {config["name"]}')
                 g.vcenter_configurations[config["name"]] = config
     except Exception as e:
         Logging.error(
