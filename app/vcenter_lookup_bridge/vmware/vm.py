@@ -3,9 +3,9 @@ from typing import List, Optional
 from fastapi import HTTPException
 from pyVmomi import vim
 from vcenter_lookup_bridge.schemas.vm_parameter import VmResponseSchema
+from vcenter_lookup_bridge.utils.logging import Logging
 from vcenter_lookup_bridge.vmware.connector import Connector
 from vcenter_lookup_bridge.vmware.helper import Helper
-from vcenter_lookup_bridge.utils.logging import Logging
 
 
 class Vm(object):

@@ -3,6 +3,7 @@ from threading import Lock
 
 class VCenterConfigManager:
     """vCenterの設定を管理するシングルトンクラス"""
+
     _instance = None
     _lock = Lock()
     _vcenter_configurations = {}
@@ -14,9 +15,9 @@ class VCenterConfigManager:
             return cls._instance
 
     def __init__(self):
-        if not hasattr(self, '_initialized'):
+        if not hasattr(self, "_initialized"):
             with self._lock:
-                if not hasattr(self, '_initialized'):
+                if not hasattr(self, "_initialized"):
                     self._initialized = True
 
     @classmethod
@@ -28,4 +29,4 @@ class VCenterConfigManager:
     def set_vcenter_configurations(cls, configurations):
         """vCenterの設定を設定"""
         with cls._lock:
-            cls._vcenter_configurations = configurations 
+            cls._vcenter_configurations = configurations
