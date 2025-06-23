@@ -38,7 +38,7 @@ async def lifespan(app: FastAPI):
     cache_host = os.getenv("VLB_CACHE_HOSTNAME", VLB_CACHE_HOSTNAME_DEFAULT)
     cache_port = int(os.getenv("VLB_CACHE_PORT", VLB_CACHE_PORT_DEFAULT))
 
-    # Load Configss
+    # Load Configs
     try:
         for vcenter_config in pathlib.Path(f'{CONFIG_VCENTER_DIR_DEFAULT}').iterdir():
             if vcenter_config.suffix == ".yml":
@@ -47,7 +47,7 @@ async def lifespan(app: FastAPI):
                 g.vcenter_configurations[config["name"]] = config
     except Exception as e:
         Logging.error(
-            f"vCneterの設定ファイルを読み込めませんでした(STATUS/{cs.EXIT_ERR_LOAD_CONFIG})"
+            f"vCenterの設定ファイルを読み込めませんでした(STATUS/{cs.EXIT_ERR_LOAD_CONFIG})"
         )
         Logging.error(e)
         sys.exit(cs.EXIT_ERR_LOAD_CONFIG)
@@ -92,5 +92,5 @@ async def add_process_time_header(request: Request, call_next):
 if __name__ == '__main__':
     # gunicorn、uvicornコマンドで実行する場合、以下設定は無視されます。
     listen_address = os.getenv("VLB_LISTEN_ADDRESS", VLB_ADDRESS_DEFAULT)
-    listen_port = os.getenv("VLB_PORT", VLB_PORT_DEFAULT)
+    listen_port = int(os.getenv("VLB_PORT", VLB_PORT_DEFAULT))
     uvicorn.run(app, host=listen_address, port=listen_port)
