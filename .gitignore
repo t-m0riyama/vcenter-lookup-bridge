@@ -135,3 +135,10 @@ app/config/vcenters/*.yml
 # docker compose override
 docker-compose.override.yml
 
+# SpecStory explanation file
+.specstory/
+
+# cursor settigns
+.cursor/
+.cursorindexingignore
+
