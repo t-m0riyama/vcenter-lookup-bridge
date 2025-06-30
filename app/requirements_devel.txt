@@ -47,7 +47,7 @@ ujson==5.10.0
 uvicorn==0.34.0
 uvloop==0.21.0
 #vsphere-automation-sdk-python==8.0.3
-git+https://github.com/vmware/vsphere-automation-sdk-python.git
+git+https://github.com/vmware/vsphere-automation-sdk-python.git@v8.0.3.0
 watchfiles==1.0.4
 websockets==14.2
 pytest==8.1.1
