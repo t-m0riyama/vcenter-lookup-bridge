@@ -142,3 +142,5 @@ docker-compose.override.yml
 .cursor/
 .cursorindexingignore
 
+# SpecStory explanation file
+.specstory/.what-is-this.md
