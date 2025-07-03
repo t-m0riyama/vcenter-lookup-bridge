@@ -1,73 +1,187 @@
+import os
 from typing import List, Optional
-
+from concurrent.futures import ThreadPoolExecutor
 from fastapi import HTTPException
 from pyVmomi import vim
 from vcenter_lookup_bridge.schemas.vm_parameter import VmResponseSchema
 from vcenter_lookup_bridge.utils.logging import Logging
-from vcenter_lookup_bridge.vmware.connector import Connector
 from vcenter_lookup_bridge.vmware.helper import Helper
+from vcenter_lookup_bridge.vmware.vcenter_connection_managr import VCenterConnectionManager
 
 
 class Vm(object):
+    # Const
+    MAX_RETRIEVE_VCENTER_OBJECTS_DEFAULT = 1000
 
     @classmethod
-    def get_vms_by_vm_folders(cls, content, configs, vm_folders: List[str], offset=0, max_results=100) -> list[VmResponseSchema]:
+    def get_vms_from_all_vcenters(
+        cls,
+        service_instances: dict,
+        configs,
+        vm_folders: List[str],
+        offset=0,
+        max_results=100,
+    ) -> list[VmResponseSchema]:
+        """全vCenterから仮想マシン一覧を取得"""
+        all_vms = []
+        offset_vcenter = 0
+        max_retrieve_vcenter_objects = int(
+            os.getenv(
+                "MAX_RETRIEVE_VCENTER_OBJECTS",
+                cls.MAX_RETRIEVE_VCENTER_OBJECTS_DEFAULT,
+            )
+        )
+
+        futures = {}
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            try:
+                # 各vCenterから仮想マシン一覧を取得するスレッドを作成
+                for vcenter_name in configs.keys():
+                    futures[vcenter_name] = executor.submit(
+                        cls.get_vms_by_vm_folders_from_vcenter,
+                        vcenter_name,
+                        service_instances,
+                        configs,
+                        vm_folders,
+                        offset_vcenter,
+                        max_retrieve_vcenter_objects,
+                    )
+
+                # 各スレッドの実行結果を回収
+                for vcenter_name in configs.keys():
+                    vms = futures[vcenter_name].result()
+                    all_vms.extend(vms)
+
+                # オフセットと最大件数の調整
+                all_vms = all_vms[offset:]
+                if len(all_vms) > max_results:
+                    all_vms = all_vms[:max_results]
+
+            except Exception as e:
+                Logging.error(f"vCenter({vcenter_name})からのVM取得に失敗: {e}")
+
+        return all_vms
+
+    @classmethod
+    def get_vms_by_vm_folders_from_vcenter(
+        cls,
+        vcenter_name: str,
+        service_instances: dict,
+        configs,
+        vm_folders: List[str],
+        offset=0,
+        max_results=100,
+    ) -> list[VmResponseSchema]:
+        """特定のvCenterから仮想マシン一覧を取得"""
         results = []
 
-        # TODO: 複数のvCenterに接続し、Service Instanceを複数利用する場合の処理を実装する
-        # 今回は1つ目のService Instanceのみ利用する
-        config_keys = list(configs.keys())
-        config = configs[config_keys[0]]
+        # 指定されたvCenterのService Instanceを取得
+        if vcenter_name not in service_instances:
+            raise HTTPException(status_code=404, detail=f"vCenter '{vcenter_name}' not found")
+
+        content = service_instances[vcenter_name].RetrieveContent()
+        config = configs[vcenter_name]
 
         datacenter = content.rootFolder.childEntity[0]
-        base_vm_folder = config['base_vm_folder']
+        base_vm_folder = config["base_vm_folder"]
         search_index = content.searchIndex
         vm_count = 0
+        all_vm_count = cls._count_all_vms(content)
+        Logging.info(f"{all_vm_count} VMs in vCenter({vcenter_name})")
 
         for vm_folder in vm_folders:
             folder = search_index.FindByInventoryPath(f"/{datacenter.name}/vm/{base_vm_folder}/{vm_folder}/")
             if folder is None:
-                Logging.warning(f"仮想マシンフォルダ({vm_folder})が見つかりませんでした。")
+                Logging.info(f"vCenter({vcenter_name})の仮想マシンフォルダ({vm_folder})が見つかりませんでした。")
                 continue
 
-            # max_resultsまで取得
             if vm_count >= offset + max_results:
                 break
 
             for vm in folder.childEntity:
-                # offsetまでスキップ
                 if vm_count < offset:
                     vm_count += 1
                     continue
-                # max_resultsまで取得
                 if vm_count >= offset + max_results:
                     break
 
                 if isinstance(vm, vim.VirtualMachine):
-                    vm_config = cls._generate_vm_info(content=content, datacenter=datacenter, vm_folder=vm_folder, vm=vm)
+                    vm_config = cls._generate_vm_info(
+                        content=content,
+                        datacenter=datacenter,
+                        vm_folder=vm_folder,
+                        vm=vm,
+                        vcenter_name=vcenter_name,
+                    )
                     results.append(vm_config)
                     vm_count += 1
         return results
 
     @classmethod
-    def get_vm_by_instance_uuid(cls, content, instance_uuid: str) -> VmResponseSchema:
+    def get_vm_by_instance_uuid_from_all_vcenters(cls, service_instances, instance_uuid: str) -> list[VmResponseSchema]:
+        all_vms = []
+
+        for vcenter_name, service_instance in service_instances.items():
+            futures = {}
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                try:
+                    # 各vCenterから仮想マシン一覧を取得するスレッドを作成
+                    for vcenter_name, service_instance in service_instances.items():
+                        futures[vcenter_name] = executor.submit(
+                            cls.get_vm_by_instance_uuid,
+                            vcenter_name,
+                            service_instance,
+                            instance_uuid,
+                        )
+
+                    # 各スレッドの実行結果を回収
+                    for vcenter_name in service_instances.keys():
+                        vms = futures[vcenter_name].result()
+                        if vms is not None:
+                            all_vms.append(vms)
+
+                    if len(all_vms) > 0:
+                        return all_vms
+                    else:
+                        raise HTTPException(status_code=404, detail="VM not found")
+                except Exception as e:
+                    raise e
+
+    @classmethod
+    def get_vm_by_instance_uuid(cls, vcenter_name, service_instance, instance_uuid: str) -> VmResponseSchema:
+        content = service_instance.RetrieveContent()
         datacenter = content.rootFolder.childEntity[0]
         search_index = content.searchIndex
 
-        # 仮想マシンをインスタンスUUID
+        # 仮想マシンをインスタンスUUIDを指定して検索
         vm = search_index.FindByUuid(
             uuid=instance_uuid,
             vmSearch=True,
             instanceUuid=True,
         )
 
-        if not isinstance(vm, vim.VirtualMachine):
-            raise HTTPException(status_code=404, detail="VM not found")
-
-        return cls._generate_vm_info(content=content, datacenter=datacenter, vm_folder=None, vm=vm)
+        if isinstance(vm, vim.VirtualMachine):
+            return cls._generate_vm_info(
+                content=content,
+                datacenter=datacenter,
+                vm_folder=None,
+                vm=vm,
+                vcenter_name=vcenter_name,
+            )
+        return None
 
     @classmethod
-    def _generate_vm_info(cls, content, datacenter, vm_folder: Optional[str], vm) -> VmResponseSchema:
+    def _count_all_vms(cls, content) -> int:
+        root_folder = content.rootFolder
+        view_vms = content.viewManager.CreateContainerView(
+            container=root_folder, type=[vim.VirtualMachine], recursive=True
+        )
+        return len(view_vms.view)
+
+    @classmethod
+    def _generate_vm_info(
+        cls, content, datacenter, vm_folder: Optional[str], vm, vcenter_name: str = None
+    ) -> VmResponseSchema:
         disk_devices = []
         network_devices = []
         for device in vm.config.hardware.device:
@@ -76,11 +190,14 @@ class Vm(object):
                     {
                         "label": device.deviceInfo.label,
                         "datastore": device.backing.datastore.name,
-                        "sizeGB": int(device.capacityInKB / 1024 ** 2),
+                        "sizeGB": int(device.capacityInKB / 1024**2),
                     }
                 )
             elif isinstance(device, vim.vm.device.VirtualVmxnet3):
-                if isinstance(device.backing, vim.vm.device.VirtualEthernetCard.DistributedVirtualPortBackingInfo):
+                if isinstance(
+                    device.backing,
+                    vim.vm.device.VirtualEthernetCard.DistributedVirtualPortBackingInfo,
+                ):
                     portgroup_name = Helper.get_object_by_object_key(
                         content=content,
                         vimtype=vim.dvs.DistributedVirtualPortgroup,
@@ -100,6 +217,7 @@ class Vm(object):
                 )
 
         vm_info = {
+            "vcenter": vcenter_name,
             "datacenter": datacenter.name,
             "cluster": vm.summary.runtime.host.parent.name,
             "esxiHostname": vm.summary.runtime.host.name,

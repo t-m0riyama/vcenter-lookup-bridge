@@ -1,19 +1,21 @@
 from pydantic import BaseModel, Field
+from vcenter_lookup_bridge.schemas.common import ApiResponse
+from typing import List
 
 
-class VmSearchSchema (BaseModel):
+class VmSearchSchema(BaseModel):
     vm_folders: list[str] = Field(
         description="仮想マシンフォルダの名前を指定します。",
         example=["folder1"],
         min_length=1,
     )
-    offset: int | None = Field(
+    offset: int = Field(
         description="仮想マシンフォルダ中の仮想マシンを取得する際の開始位置を指定します。",
         default=0,
         example=0,
         ge=0,
     )
-    max_results: int | None = Field(
+    max_results: int = Field(
         description="仮想マシンフォルダ中の仮想マシンを取得する際の最大件数を指定します。",
         default=100,
         example=100,
@@ -23,7 +25,7 @@ class VmSearchSchema (BaseModel):
     model_config = {"extra": "forbid"}
 
 
-class VmResponseSchema (BaseModel):
+class VmResponseSchema(BaseModel):
     uuid: str = Field(
         description="仮想マシンのUUIDを示します。",
         example="421d0f07-b177-f71b-9723-123456789abc",
@@ -31,6 +33,10 @@ class VmResponseSchema (BaseModel):
     instanceUuid: str = Field(
         description="仮想マシンのインスタンスUUIDを示します。",
         example="50131f3e-4ec1-2bce-10eb-23456789abcd",
+    )
+    vcenter: str | None = Field(
+        description="vCenter名を示します。",
+        example="vcenter01",
     )
     datacenter: str = Field(
         description="仮想マシンのデータセンターを示します。",
@@ -63,26 +69,26 @@ class VmResponseSchema (BaseModel):
     diskDevices: list | None = Field(
         description="仮想マシンのデバイス情報を示します。",
         example=[
-            {'label': 'Hard disk 1', 'datastore': 'ds01', 'sizeGB': 200.0},
-            {'label': 'Hard disk 2', 'datastore': 'ds02', 'sizeGB': 600.0},
+            {"label": "Hard disk 1", "datastore": "ds01", "sizeGB": 200.0},
+            {"label": "Hard disk 2", "datastore": "ds02", "sizeGB": 600.0},
         ],
     )
     networkDevices: list | None = Field(
         description="仮想マシンのネットワーク情報を示します。",
         example=[
             {
-                'label': 'Network adapter 1',
-                'macAddress': '00:11:22:33:44:55',
-                'portgroup': 'Service Network',
-                'connected': True,
-                'startConnected': True
+                "label": "Network adapter 1",
+                "macAddress": "00:11:22:33:44:55",
+                "portgroup": "Service Network",
+                "connected": True,
+                "startConnected": True,
             },
             {
-                'label': 'Network adapter 2',
-                'macAddress': '11:11:22:33:44:00',
-                'portgroup': 'Management Network',
-                'connected': False,
-                'startConnected': False
+                "label": "Network adapter 2",
+                "macAddress": "11:11:22:33:44:00",
+                "portgroup": "Management Network",
+                "connected": False,
+                "startConnected": False,
             },
         ],
     )
@@ -115,3 +121,8 @@ class VmResponseSchema (BaseModel):
         example="vmx-15",
     )
 
+
+class VmListResponseSchema(ApiResponse[List[VmResponseSchema]]):
+    """VM一覧取得レスポンス"""
+
+    pass
