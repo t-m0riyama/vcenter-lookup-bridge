@@ -40,9 +40,9 @@ async def lifespan(app: FastAPI):
 
     # Load Configs
     try:
-        for vcenter_config in pathlib.Path(f'{CONFIG_VCENTER_DIR_DEFAULT}').iterdir():
+        for vcenter_config in pathlib.Path(f"{CONFIG_VCENTER_DIR_DEFAULT}").iterdir():
             if vcenter_config.suffix == ".yml":
-                config = ConfigUtil.parse_config(f'{vcenter_config}')
+                config = ConfigUtil.parse_config(f"{vcenter_config}")
                 Logging.info(f'vCenter Configuration Loaded: {config["name"]}')
                 g.vcenter_configurations[config["name"]] = config
     except Exception as e:
@@ -65,14 +65,15 @@ async def lifespan(app: FastAPI):
     await redis.close()
     Logging.info("Shutdown completed.")
 
+
 root_path = os.getenv("VLB_ROOT_PATH", VLB_ROOT_PATH_DEFAULT)
 app = FastAPI(
-    title='vCenter Lookup Bridge API',
-    summary='vCenterに接続し、仮想マシン・データストア・ポートグループなどの情報を参照するAPIです。',
-    description='vCenter Lookup Bridge API',
-    version='0.1.0',
+    title="vCenter Lookup Bridge API",
+    summary="vCenterに接続し、仮想マシン・データストア・ポートグループなどの情報を参照するAPIです。",
+    description="vCenter Lookup Bridge API",
+    version="0.1.0",
     lifespan=lifespan,
-    root_path=f'{root_path}/api/v1',
+    root_path=f"{root_path}/api/v1",
 )
 app.include_router(api_router)
 
@@ -80,6 +81,7 @@ app.include_router(api_router)
 log_dir = os.getenv("VLB_LOG_DIR", LOG_DIR_DEFAULT)
 log_file = os.getenv("VLB_LOG_FILE", LOG_FILE_DEFAULT)
 Logging.init(log_dir, log_file)
+
 
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
@@ -89,7 +91,8 @@ async def add_process_time_header(request: Request, call_next):
     response.headers["X-Process-Time"] = str(process_time)
     return response
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # gunicorn、uvicornコマンドで実行する場合、以下設定は無視されます。
     listen_address = os.getenv("VLB_LISTEN_ADDRESS", VLB_ADDRESS_DEFAULT)
     listen_port = int(os.getenv("VLB_PORT", VLB_PORT_DEFAULT))

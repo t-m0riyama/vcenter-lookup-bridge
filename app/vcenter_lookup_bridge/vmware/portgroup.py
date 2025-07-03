@@ -14,21 +14,20 @@ class Portgroup(object):
         content,
         tag_category: str,
         tags: list[str],
-        offset: int=0,
-        max_results: int=100,
+        offset: int = 0,
+        max_results: int = 100,
     ) -> list:
         results = []
         portgroup_count = 0
 
         cv = content.viewManager.CreateContainerView(
-            container=content.rootFolder,
-            type=[vim.Network],
-            recursive=True
+            container=content.rootFolder, type=[vim.Network], recursive=True
         )
         portgroups = cv.view
         portgroup_tags = Tag.get_all_portgroup_tags(configs=g.vcenter_configurations)
 
-        if portgroups is None: return results
+        if portgroups is None:
+            return results
         for portgroup in portgroups:
             # offsetまでスキップ
             if portgroup_count < offset:
@@ -42,11 +41,17 @@ class Portgroup(object):
                 for portgroup_name in portgroup_tags.keys():
                     if portgroup.name == portgroup_name:
                         if tag_category in portgroup_tags[portgroup_name]:
-                            portgroup_config = cls._generate_portgroup_info(portgroup=portgroup, content=content)
-                            portgroup_config['tag_category'] = tag_category
-                            portgroup_config['tags'] = portgroup_tags[portgroup_name][tag_category]
+                            portgroup_config = cls._generate_portgroup_info(
+                                portgroup=portgroup, content=content
+                            )
+                            portgroup_config["tag_category"] = tag_category
+                            portgroup_config["tags"] = portgroup_tags[portgroup_name][
+                                tag_category
+                            ]
 
-                            for attached_tag in portgroup_tags[portgroup_name][tag_category]:
+                            for attached_tag in portgroup_tags[portgroup_name][
+                                tag_category
+                            ]:
                                 if str(attached_tag) in tags:
                                     results.append(portgroup_config)
                                     portgroup_count += 1
@@ -62,6 +67,7 @@ class Portgroup(object):
 
             portgroup_config = {
                 "name": portgroup.name,
+                "vcenter": "not_set",
                 "hosts": hosts,
             }
             return portgroup_config

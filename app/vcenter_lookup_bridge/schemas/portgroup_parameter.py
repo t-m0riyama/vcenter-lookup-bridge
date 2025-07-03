@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
 
-class PortgroupSearchSchema (BaseModel):
+class PortgroupSearchSchema(BaseModel):
     tag_category: str = Field(
         description="タグのカテゴリを指定します。",
         example="cat1",
@@ -28,21 +28,24 @@ class PortgroupSearchSchema (BaseModel):
     model_config = {"extra": "forbid"}
 
 
-class PortgroupResponseSchema (BaseModel):
+class PortgroupResponseSchema(BaseModel):
     name: str = Field(
         description="ポートグループの名前を示します。",
         example="pg01",
     )
+    vcenter: str | None = Field(
+        description="vCenter名を示します。",
+        example="vcenter01",
+    )
     tag_category: str | None = Field(
         description="ポートグループに付与されているタグのカテゴリを示します。",
-        example="cat1"
+        example="cat1",
     )
     tags: list[str] | None = Field(
         description="ポートグループに付与されているタグを示します。",
-        example=["tag1", "tag2"]
+        example=["tag1", "tag2"],
     )
     hosts: list[str] | None = Field(
         description="ポートグループを利用可能なESXiホストを示します。",
         example=["host-01", "host-02"],
     )
-
