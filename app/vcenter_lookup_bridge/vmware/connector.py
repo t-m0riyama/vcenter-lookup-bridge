@@ -9,7 +9,7 @@ import vcenter_lookup_bridge.vmware.instances as g
 from pyVim.connect import Disconnect, SmartConnect
 from vcenter_lookup_bridge.utils.constants import Constants as cs
 from vcenter_lookup_bridge.utils.logging import Logging
-from vcenter_lookup_bridge.vmware.vcenter_connection_managr import VCenterConnectionManager
+from vcenter_lookup_bridge.vmware.vcenter_ws_session_managr import VCenterWSSessionManager
 
 
 class Connector(object):
@@ -103,13 +103,13 @@ class Connector(object):
 
     @classmethod
     def _connect_vcenter_with_redis(cls):
-        redis = VCenterConnectionManager.initialize()
-        VCenterConnectionManager.set_vcenter_connection(
+        redis = VCenterWSSessionManager.initialize()
+        VCenterWSSessionManager.set_vcenter_ws_session(
             redis=redis,
             vcenter_name="vcenter8-01",
-            status=VCenterConnectionManager.VCENTER_STATUS_ALIVE,
+            status=VCenterWSSessionManager.VCENTER_STATUS_ALIVE,
         )
-        status = VCenterConnectionManager.get_vcenter_connection(redis=redis, vcenter_name="vcenter8-01")
+        status = VCenterWSSessionManager.get_vcenter_ws_session(redis=redis, vcenter_name="vcenter8-01")
         return status
 
     @classmethod
@@ -145,11 +145,11 @@ class Connector(object):
                     g.service_instances[vcenter_name] = mock_si
             return g.service_instances
 
-        redis = VCenterConnectionManager.initialize()
+        redis = VCenterWSSessionManager.initialize()
         for vcenter_name in configs.keys():
             connection_retry_count = 0
             # ダウン状態のvCenterについては、接続を試みない
-            if VCenterConnectionManager.is_dead_vcenter_connection(redis=redis, vcenter_name=vcenter_name):
+            if VCenterWSSessionManager.is_dead_vcenter_ws_session(redis=redis, vcenter_name=vcenter_name):
                 continue
 
             try:
@@ -160,10 +160,10 @@ class Connector(object):
                     )
 
                 current_time = g.service_instances[vcenter_name].CurrentTime()
-                VCenterConnectionManager.set_vcenter_connection(
+                VCenterWSSessionManager.set_vcenter_ws_session(
                     redis=redis,
                     vcenter_name=vcenter_name,
-                    status=VCenterConnectionManager.VCENTER_STATUS_ALIVE,
+                    status=VCenterWSSessionManager.VCENTER_STATUS_ALIVE,
                 )
             except:
                 # 一部のvCenterに接続できない場合、かつリトライ上限を超過した際は接続を諦めた上で、
@@ -183,10 +183,10 @@ class Connector(object):
 
                         if connection_retry_count >= vcenter_connect_retry_max_count:
                             # 最大リトライ回数に達した場合、ダウン状態としてマーク
-                            VCenterConnectionManager.set_vcenter_connection(
+                            VCenterWSSessionManager.set_vcenter_ws_session(
                                 redis=redis,
                                 vcenter_name=vcenter_name,
-                                status=VCenterConnectionManager.VCENTER_STATUS_DEAD,
+                                status=VCenterWSSessionManager.VCENTER_STATUS_DEAD,
                             )
                             Logging.error(
                                 f"vCenter({configs[vcenter_name]['hostname']}:{configs[vcenter_name]['port']})への（再）接続に失敗しました。最大リトライ回数に達したため、ダウンした接続としてマークしました"

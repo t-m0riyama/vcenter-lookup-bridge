@@ -22,8 +22,22 @@ class ApiResponse(BaseModel, Generic[T]):
     results: T = Field(description="実際のデータ")
     success: bool = Field(description="処理成功フラグ")
     message: Optional[str] = Field(description="メッセージ", default=None)
-    pagination: Optional[PaginationInfo] = Field(description="ページネーション情報", default=None)
-    vcenter_connections: Optional[dict] = Field(description="vCenterの接続状況", default=None)
+    pagination: Optional[PaginationInfo] = Field(
+        description="ページネーション情報",
+        default=None,
+        example=PaginationInfo(
+            total_count=1,
+            offset=0,
+            limit=1000,
+            has_next=False,
+            has_previous=False,
+        ),
+    )
+    vcenter_ws_sessions: Optional[dict] = Field(
+        description="vCenterの接続状況",
+        default=None,
+        example={"vcenter01": "alive", "vcenter02": "dead"},
+    )
     timestamp: str = Field(description="レスポンス生成時刻")
     request_id: Optional[str] = Field(description="リクエストID", default=None)
 
@@ -34,7 +48,7 @@ class ApiResponse(BaseModel, Generic[T]):
         success: bool = True,
         message: Optional[str] = None,
         pagination: Optional[PaginationInfo] = None,
-        vcenter_connections: Optional[dict] = None,
+        vcenter_ws_sessions: Optional[dict] = None,
         request_id: Optional[str] = None,
     ):
         return cls(
@@ -42,7 +56,7 @@ class ApiResponse(BaseModel, Generic[T]):
             success=success,
             message=message,
             pagination=pagination,
-            vcenter_connections=vcenter_connections,
+            vcenter_ws_sessions=vcenter_ws_sessions,
             timestamp=datetime.now(UTC).isoformat(),
             request_id=request_id or str(uuid.uuid4()),
         )
