@@ -4,6 +4,15 @@ from typing import List
 
 
 class VmSearchSchema(BaseModel):
+    vcenter: str = Field(
+        description="vCenterの名前を指定します。vCenter管理下の仮想マシン一覧を取得します。",
+        default=None,
+        example="vcenter01",
+    )
+    model_config = {"extra": "forbid"}
+
+
+class VmListSearchSchema(BaseModel):
     vm_folders: list[str] = Field(
         description="仮想マシンフォルダの名前を指定します。",
         example=["folder1"],
@@ -22,10 +31,19 @@ class VmSearchSchema(BaseModel):
         ge=1,
         le=1000,
     )
+    vcenter: str = Field(
+        description="vCenterの名前を指定します。vCenter管理下の仮想マシン一覧を取得します。",
+        default=None,
+        example="vcenter01",
+    )
     model_config = {"extra": "forbid"}
 
 
 class VmResponseSchema(BaseModel):
+    name: str = Field(
+        description="仮想マシンの名前を示します。",
+        example="example-vm01",
+    )
     uuid: str = Field(
         description="仮想マシンのUUIDを示します。",
         example="421d0f07-b177-f71b-9723-123456789abc",
@@ -49,10 +67,6 @@ class VmResponseSchema(BaseModel):
     esxiHostname: str | None = Field(
         description="仮想マシンのESXiホストを示します。",
         example="esxi01",
-    )
-    name: str = Field(
-        description="仮想マシンの名前を示します。",
-        example="example-vm01",
     )
     powerState: str = Field(
         description="仮想マシンの電源の状態を示します。",

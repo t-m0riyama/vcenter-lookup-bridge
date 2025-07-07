@@ -4,10 +4,10 @@ from fastapi import APIRouter, Depends, Path, Query
 from fastapi_cache.decorator import cache
 import vcenter_lookup_bridge.vmware.instances as g
 from vcenter_lookup_bridge.schemas.common import ApiResponse, PaginationInfo
-from vcenter_lookup_bridge.schemas.vm_parameter import VmSearchSchema, VmListResponseSchema
+from vcenter_lookup_bridge.schemas.vm_parameter import VmListSearchSchema, VmListResponseSchema, VmSearchSchema
 from vcenter_lookup_bridge.utils.logging import Logging
 from vcenter_lookup_bridge.vmware.connector import Connector
-from vcenter_lookup_bridge.vmware.vcenter_connection_managr import VCenterConnectionManager
+from vcenter_lookup_bridge.vmware.vcenter_ws_session_managr import VCenterWSSessionManager
 from vcenter_lookup_bridge.vmware.vm import Vm
 
 # const
@@ -24,15 +24,16 @@ cache_expire_secs = int(os.getenv("VLB_CACHE_EXPIRE_SECS", CACHE_EXPIRE_SECS_DEF
 )
 @cache(expire=cache_expire_secs)
 async def list_vms(
-    search_params: Annotated[VmSearchSchema, Query()],
+    search_params: Annotated[VmListSearchSchema, Query()],
     service_instances: object = Depends(Connector.get_service_instances),
 ):
     try:
-        vcenter_connections = VCenterConnectionManager.get_all_vcenter_connection_informations()
+        vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations()
         vms = Vm.get_vms_from_all_vcenters(
             service_instances=service_instances,
             configs=g.vcenter_configurations,
             vm_folders=search_params.vm_folders,
+            vcenter_name=search_params.vcenter,
             offset=search_params.offset,
             max_results=search_params.max_results,
         )
@@ -51,7 +52,7 @@ async def list_vms(
                 success=True,
                 message=f"{len(vms)}件の仮想マシンを取得しました。",
                 pagination=pagination,
-                vcenter_connections=vcenter_connections,
+                vcenter_ws_sessions=vcenter_ws_sessions,
             )
         else:
             # データが見つからない場合の部分成功
@@ -59,7 +60,7 @@ async def list_vms(
                 results=[],
                 success=False,
                 message="指定した仮想マシンフォルダ中に仮想マシンは見つかりませんでした。",
-                vcenter_connections=vcenter_connections,
+                vcenter_ws_sessions=vcenter_ws_sessions,
             )
     except Exception as e:
         Logging.error(f"仮想マシン情報の一覧を取得中にエラーが発生しました: {e}")
@@ -80,27 +81,31 @@ async def get_vm(
             example="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
         ),
     ],
+    search_params: Annotated[VmSearchSchema, Query()],
     service_instances: object = Depends(Connector.get_service_instances),
 ):
     try:
-        vcenter_connections = VCenterConnectionManager.get_all_vcenter_connection_informations()
+        Logging.info(f"インスタンスUUID({search_params.vcenter})の仮想マシンを取得します。")
+        vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations()
         vms = Vm.get_vm_by_instance_uuid_from_all_vcenters(
-            service_instances=service_instances, instance_uuid=vm_instance_uuid
+            service_instances=service_instances,
+            instance_uuid=vm_instance_uuid,
+            vcenter_name=search_params.vcenter,
         )
-        if vms:
+        if len(vms) > 0:
             return ApiResponse.create(
                 results=vms,
                 success=True,
                 message="仮想マシン情報を取得しました",
-                vcenter_connections=vcenter_connections,
+                vcenter_ws_sessions=vcenter_ws_sessions,
             )
         else:
             # VMが見つからない場合
             return ApiResponse.create(
-                results=None,
+                results=[],
                 success=False,
                 message=f"指定されたインスタンスUUID({vm_instance_uuid})の仮想マシンが見つかりませんでした",
-                vcenter_connections=vcenter_connections,
+                vcenter_ws_sessions=vcenter_ws_sessions,
             )
     except Exception as e:
         Logging.error(f"仮想マシン情報を取得中にエラーが発生しました: {e}")
