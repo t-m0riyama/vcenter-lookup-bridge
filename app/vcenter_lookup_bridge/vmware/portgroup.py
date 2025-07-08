@@ -7,6 +7,7 @@ from vcenter_lookup_bridge.vmware.tag import Tag
 
 
 class Portgroup(object):
+    """ポートグループ情報を取得するクラス"""
 
     @classmethod
     def get_portgroups_by_tags(
@@ -20,9 +21,7 @@ class Portgroup(object):
         results = []
         portgroup_count = 0
 
-        cv = content.viewManager.CreateContainerView(
-            container=content.rootFolder, type=[vim.Network], recursive=True
-        )
+        cv = content.viewManager.CreateContainerView(container=content.rootFolder, type=[vim.Network], recursive=True)
         portgroups = cv.view
         portgroup_tags = Tag.get_all_portgroup_tags(configs=g.vcenter_configurations)
 
@@ -41,17 +40,11 @@ class Portgroup(object):
                 for portgroup_name in portgroup_tags.keys():
                     if portgroup.name == portgroup_name:
                         if tag_category in portgroup_tags[portgroup_name]:
-                            portgroup_config = cls._generate_portgroup_info(
-                                portgroup=portgroup, content=content
-                            )
+                            portgroup_config = cls._generate_portgroup_info(portgroup=portgroup, content=content)
                             portgroup_config["tag_category"] = tag_category
-                            portgroup_config["tags"] = portgroup_tags[portgroup_name][
-                                tag_category
-                            ]
+                            portgroup_config["tags"] = portgroup_tags[portgroup_name][tag_category]
 
-                            for attached_tag in portgroup_tags[portgroup_name][
-                                tag_category
-                            ]:
+                            for attached_tag in portgroup_tags[portgroup_name][tag_category]:
                                 if str(attached_tag) in tags:
                                     results.append(portgroup_config)
                                     portgroup_count += 1

@@ -9,6 +9,8 @@ from vcenter_lookup_bridge.vmware.helper import Helper
 
 
 class Vm(object):
+    """仮想マシン情報を取得するクラス"""
+
     # Const
     VLB_MAX_RETRIEVE_VCENTER_OBJECTS_DEFAULT = 1000
     VLB_MAX_VCENTER_WEB_SERVICE_WORKER_THREADS_DEFAULT = 4

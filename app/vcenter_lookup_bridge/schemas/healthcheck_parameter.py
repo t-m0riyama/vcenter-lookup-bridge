@@ -3,6 +3,8 @@ from vcenter_lookup_bridge.schemas.common import ApiResponse
 
 
 class HealthcheckSchema(BaseModel):
+    """ヘルスチェックのスキーマ"""
+
     status: str = Field(
         description="サービスのステータスを示します。(ok|ng)",
         example="ok",
@@ -14,6 +16,6 @@ class HealthcheckSchema(BaseModel):
 
 
 class HealthcheckResponseSchema(ApiResponse[HealthcheckSchema]):
-    """ヘルスチェックレスポンス"""
+    """ヘルスチェックのレスポンススキーマ"""
 
     pass

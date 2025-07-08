@@ -2,6 +2,8 @@ from pydantic import BaseModel, Field
 
 
 class DatastoreSearchSchema(BaseModel):
+    """データストア情報のリクエストスキーマ"""
+
     tag_category: str = Field(
         description="タグのカテゴリを指定します。",
         example="cat1",
@@ -29,6 +31,8 @@ class DatastoreSearchSchema(BaseModel):
 
 
 class DatastoreResponseSchema(BaseModel):
+    """データストア情報のレスポンススキーマ"""
+
     name: str = Field(
         description="データストアの名前を示します。",
         example="ds01",

@@ -4,6 +4,8 @@ from typing import List
 
 
 class VmSearchSchema(BaseModel):
+    """仮想マシンのクエリパラメータのスキーマ"""
+
     vcenter: str = Field(
         description="vCenterの名前を指定します。vCenter管理下の仮想マシン一覧を取得します。",
         default=None,
@@ -13,6 +15,8 @@ class VmSearchSchema(BaseModel):
 
 
 class VmListSearchSchema(BaseModel):
+    """仮想マシン一覧のクエリパラメータのスキーマ"""
+
     vm_folders: list[str] = Field(
         description="仮想マシンフォルダの名前を指定します。",
         example=["folder1"],
@@ -40,6 +44,8 @@ class VmListSearchSchema(BaseModel):
 
 
 class VmResponseSchema(BaseModel):
+    """仮想マシンのレスポンススキーマ"""
+
     name: str = Field(
         description="仮想マシンの名前を示します。",
         example="example-vm01",
@@ -137,6 +143,6 @@ class VmResponseSchema(BaseModel):
 
 
 class VmListResponseSchema(ApiResponse[List[VmResponseSchema]]):
-    """VM一覧取得レスポンス"""
+    """仮想マシン一覧のレスポンススキーマ"""
 
     pass

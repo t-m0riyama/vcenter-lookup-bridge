@@ -4,16 +4,14 @@ from vcenter_lookup_bridge.vmware.helper import Helper
 
 
 class Host(object):
+    """ESXiホスト情報を取得するクラス"""
 
     @classmethod
     def get_host_by_name(cls, content, host_name):
         result = None
-        host = Helper.get_object_by_name(
-            content=content,
-            vimtype=[vim.HostSystem],
-            name=host_name
-        )
-        if host is None: return result
+        host = Helper.get_object_by_name(content=content, vimtype=[vim.HostSystem], name=host_name)
+        if host is None:
+            return result
 
         if isinstance(host, vim.HostSystem):
             host_info = cls._generate_host_info(host=host)
@@ -24,12 +22,9 @@ class Host(object):
     @classmethod
     def get_host_by_object_key(cls, content, object_key):
         result = None
-        host = Helper.get_object_by_object_key(
-            content=content,
-            vimtype=vim.HostSystem,
-            object_key=object_key
-        )
-        if host is None: return result
+        host = Helper.get_object_by_object_key(content=content, vimtype=vim.HostSystem, object_key=object_key)
+        if host is None:
+            return result
 
         if isinstance(host, vim.HostSystem):
             host_info = cls._generate_host_info(host=host)

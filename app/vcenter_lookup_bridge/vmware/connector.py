@@ -13,6 +13,8 @@ from vcenter_lookup_bridge.vmware.vcenter_ws_session_managr import VCenterWSSess
 
 
 class Connector(object):
+    """vCenter接続(Web Service API)を管理するクラス"""
+
     # Const
     VCENTER_CONNECT_TIMEOUT_SEC_DEFAULT = 60
     VCENTER_CONNECT_RETRY_INTERVAL_SEC_DEFAULT = 30

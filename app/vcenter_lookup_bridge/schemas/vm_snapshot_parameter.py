@@ -4,6 +4,8 @@ from typing import List
 
 
 class VmSnapshotSearchSchema(BaseModel):
+    """仮想マシンスナップショットのクエリパラメータのスキーマ"""
+
     vcenter: str = Field(
         description="vCenterの名前を指定します。vCenter管理下の仮想マシン一覧を取得します。",
         default=None,
@@ -13,6 +15,8 @@ class VmSnapshotSearchSchema(BaseModel):
 
 
 class VmSnapshotListSearchSchema(BaseModel):
+    """仮想マシンスナップショット一覧のクエリパラメータのスキーマ"""
+
     vm_folders: list[str] = Field(
         description="仮想マシンフォルダの名前を指定します。",
         example=["folder1"],
@@ -40,6 +44,8 @@ class VmSnapshotListSearchSchema(BaseModel):
 
 
 class VmSnapshotResponseSchema(BaseModel):
+    """仮想マシンスナップショットのレスポンススキーマ"""
+
     name: str = Field(
         description="スナップショットの名前を示します。",
         example="Snapshot 01",
@@ -79,6 +85,6 @@ class VmSnapshotResponseSchema(BaseModel):
 
 
 class VmSnapshotListResponseSchema(ApiResponse[List[VmSnapshotResponseSchema]]):
-    """VMスナップショット一覧取得レスポンス"""
+    """仮想マシンスナップショット一覧のレスポンススキーマ"""
 
     pass

@@ -7,6 +7,7 @@ from vcenter_lookup_bridge.vmware.tag import Tag
 
 
 class Datastore(object):
+    """データストア情報を取得するクラス"""
 
     @classmethod
     def get_datastores_by_tags(
@@ -20,9 +21,7 @@ class Datastore(object):
         results = []
         datastore_count = 0
 
-        cv = content.viewManager.CreateContainerView(
-            container=content.rootFolder, type=[vim.Datastore], recursive=True
-        )
+        cv = content.viewManager.CreateContainerView(container=content.rootFolder, type=[vim.Datastore], recursive=True)
         datastores = cv.view
         datastore_tags = Tag.get_all_datastore_tags(configs=g.vcenter_configurations)
 
@@ -39,17 +38,11 @@ class Datastore(object):
                 for datastore_name in datastore_tags.keys():
                     if datastore.name == datastore_name:
                         if tag_category in datastore_tags[datastore_name]:
-                            datastore_config = cls._generate_datastore_info(
-                                datastore=datastore, content=content
-                            )
+                            datastore_config = cls._generate_datastore_info(datastore=datastore, content=content)
                             datastore_config["tag_category"] = tag_category
-                            datastore_config["tags"] = datastore_tags[datastore_name][
-                                tag_category
-                            ]
+                            datastore_config["tags"] = datastore_tags[datastore_name][tag_category]
 
-                            for attached_tag in datastore_tags[datastore_name][
-                                tag_category
-                            ]:
+                            for attached_tag in datastore_tags[datastore_name][tag_category]:
                                 if str(attached_tag) in tags:
                                     results.append(datastore_config)
                                     datastore_count += 1
@@ -61,11 +54,7 @@ class Datastore(object):
             # データストアをマウントしているホストの情報を取得
             hosts = []
             for host in datastore.host:
-                hosts.append(
-                    (Host.get_host_by_object_key(content=content, object_key=host.key))[
-                        "name"
-                    ]
-                )
+                hosts.append((Host.get_host_by_object_key(content=content, object_key=host.key))["name"])
 
             datastore_config = {
                 "name": datastore.name,

@@ -2,6 +2,8 @@ from pydantic import BaseModel, Field
 
 
 class PortgroupSearchSchema(BaseModel):
+    """ポートグループのクエリパラメータのスキーマ"""
+
     tag_category: str = Field(
         description="タグのカテゴリを指定します。",
         example="cat1",
@@ -29,6 +31,8 @@ class PortgroupSearchSchema(BaseModel):
 
 
 class PortgroupResponseSchema(BaseModel):
+    """ポートグループのレスポンススキーマ"""
+
     name: str = Field(
         description="ポートグループの名前を示します。",
         example="pg01",

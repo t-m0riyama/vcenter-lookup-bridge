@@ -9,6 +9,8 @@ import urllib.parse
 
 
 class Snapshot(object):
+    """スナップショット情報を取得するクラス"""
+
     # Const
     VLB_MAX_RETRIEVE_VCENTER_OBJECTS_DEFAULT = 1000
     VLB_MAX_VCENTER_WEB_SERVICE_WORKER_THREADS_DEFAULT = 4

@@ -1,4 +1,6 @@
 class Constants(object):
+    """定数クラス"""
+
     # Const
     EXIT_SUCCESS = 0
     EXIT_ERR_BAD_OPTION = 1

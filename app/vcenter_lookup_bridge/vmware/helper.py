@@ -3,6 +3,7 @@ from vcenter_lookup_bridge.utils.logging import Logging
 
 
 class Helper(object):
+    """vCenterオブジェクト取得用のヘルパークラス"""
 
     @classmethod
     def get_object_by_name(cls, content, vimtype, name):
@@ -28,15 +29,15 @@ class Helper(object):
             if object_key:
                 match vimtype:
                     case vim.VirtualMachine:
-                        object_key_prefix = 'vim.VirtualMachine'
+                        object_key_prefix = "vim.VirtualMachine"
                     case vim.HostSystem:
-                        object_key_prefix = 'vim.HostSystem'
+                        object_key_prefix = "vim.HostSystem"
                     case vim.Datastore:
-                        object_key_prefix = 'vim.Datastore'
+                        object_key_prefix = "vim.Datastore"
                     case vim.Network:
-                        object_key_prefix = 'vim.Network'
+                        object_key_prefix = "vim.Network"
                     case vim.dvs.DistributedVirtualPortgroup:
-                        object_key_prefix = 'vim.dvs.DistributedVirtualPortgroup'
+                        object_key_prefix = "vim.dvs.DistributedVirtualPortgroup"
 
                 if f"'{object_key_prefix}:{child_object._moId}'" == str(object_key):
                     obj = child_object

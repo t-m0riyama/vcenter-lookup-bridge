@@ -6,7 +6,9 @@ from vmware.vapi.vsphere.client import create_vsphere_client
 # SSL関連の警告出力を抑制
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+
 class Tag(object):
+    """タグ情報を取得するクラス"""
 
     @classmethod
     def get_vm_tags(cls, configs, vm_name: str) -> dict:
@@ -19,7 +21,9 @@ class Tag(object):
     def get_all_vm_tags(cls, configs) -> dict:
         clients = cls._create_clients(configs=configs)
         cat_dict, tag_dict = cls._generate_tag_dict(clients=clients)
-        return cls._generate_object_tag_dict(clients=clients, cat_dict=cat_dict, tag_dict=tag_dict, object_type='VirtualMachine')
+        return cls._generate_object_tag_dict(
+            clients=clients, cat_dict=cat_dict, tag_dict=tag_dict, object_type="VirtualMachine"
+        )
 
     def get_datastore_tags(cls, configs, datastore_name: str) -> dict:
         datastore_tags = cls.get_all_datastore_tags(configs=configs)
@@ -31,7 +35,9 @@ class Tag(object):
     def get_all_datastore_tags(cls, configs) -> dict:
         clients = cls._create_clients(configs=configs)
         cat_dict, tag_dict = cls._generate_tag_dict(clients=clients)
-        return cls._generate_object_tag_dict(clients=clients, cat_dict=cat_dict, tag_dict=tag_dict, object_type='Datastore')
+        return cls._generate_object_tag_dict(
+            clients=clients, cat_dict=cat_dict, tag_dict=tag_dict, object_type="Datastore"
+        )
 
     @classmethod
     def get_portgroup_tags(cls, configs, portgroup_name: str) -> dict:
@@ -44,7 +50,9 @@ class Tag(object):
     def get_all_portgroup_tags(cls, configs) -> dict:
         clients = cls._create_clients(configs=configs)
         cat_dict, tag_dict = cls._generate_tag_dict(clients=clients)
-        return cls._generate_object_tag_dict(clients=clients, cat_dict=cat_dict, tag_dict=tag_dict, object_type='Network')
+        return cls._generate_object_tag_dict(
+            clients=clients, cat_dict=cat_dict, tag_dict=tag_dict, object_type="Network"
+        )
 
     @classmethod
     def _create_clients(cls, configs):
@@ -100,13 +108,13 @@ class Tag(object):
         match object_type:
             case "VirtualMachine":
                 objects = client.vcenter.VM.list()
-                tag_search_objs = [{'id': v.vm, 'type': object_type} for v in objects]
+                tag_search_objs = [{"id": v.vm, "type": object_type} for v in objects]
             case "Datastore":
                 objects = client.vcenter.Datastore.list()
-                tag_search_objs = [{'id': v.datastore, 'type': object_type} for v in objects]
+                tag_search_objs = [{"id": v.datastore, "type": object_type} for v in objects]
             case "Network":
                 objects = client.vcenter.Network.list()
-                tag_search_objs = [{'id': v.network, 'type': object_type} for v in objects]
+                tag_search_objs = [{"id": v.network, "type": object_type} for v in objects]
         return tag_search_objs
 
     @classmethod
