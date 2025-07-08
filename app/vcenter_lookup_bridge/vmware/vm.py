@@ -129,14 +129,14 @@ class Vm(object):
                     break
 
                 if isinstance(vm, vim.VirtualMachine):
-                    vm_config = cls._generate_vm_info(
+                    vm_info = cls._generate_vm_info(
                         content=content,
                         datacenter=datacenter,
                         vm_folder=vm_folder,
                         vm=vm,
                         vcenter_name=vcenter_name,
                     )
-                    results.append(vm_config)
+                    results.append(vm_info)
                     vm_count += 1
         return results
 
@@ -166,6 +166,7 @@ class Vm(object):
                 if vms is not None:
                     all_vms.append(vms)
             except HTTPException as e:
+                Logging.info(f"vCenter({vcenter_name})からのVM取得に失敗: {e}")
                 pass
             except Exception as e:
                 raise e

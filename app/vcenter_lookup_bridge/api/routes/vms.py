@@ -40,11 +40,11 @@ async def list_vms(
 
         if vms:
             pagination = PaginationInfo(
-                total_count=len(vms),
+                totalCount=len(vms),
                 offset=search_params.offset,
                 limit=search_params.max_results,
-                has_next=len(vms) == search_params.max_results,
-                has_previous=search_params.offset > 0,
+                hasNext=len(vms) == search_params.max_results,
+                hasPrevious=search_params.offset > 0,
             )
 
             return ApiResponse.create(
@@ -52,7 +52,7 @@ async def list_vms(
                 success=True,
                 message=f"{len(vms)}件の仮想マシンを取得しました。",
                 pagination=pagination,
-                vcenter_ws_sessions=vcenter_ws_sessions,
+                vcenterWsSessions=vcenter_ws_sessions,
             )
         else:
             # データが見つからない場合の部分成功
@@ -60,7 +60,7 @@ async def list_vms(
                 results=[],
                 success=False,
                 message="指定した仮想マシンフォルダ中に仮想マシンは見つかりませんでした。",
-                vcenter_ws_sessions=vcenter_ws_sessions,
+                vcenterWsSessions=vcenter_ws_sessions,
             )
     except Exception as e:
         Logging.error(f"仮想マシン情報の一覧を取得中にエラーが発生しました: {e}")
@@ -97,7 +97,7 @@ async def get_vm(
                 results=vms,
                 success=True,
                 message="仮想マシン情報を取得しました",
-                vcenter_ws_sessions=vcenter_ws_sessions,
+                vcenterWsSessions=vcenter_ws_sessions,
             )
         else:
             # VMが見つからない場合
@@ -105,7 +105,7 @@ async def get_vm(
                 results=[],
                 success=False,
                 message=f"指定されたインスタンスUUID({vm_instance_uuid})の仮想マシンが見つかりませんでした",
-                vcenter_ws_sessions=vcenter_ws_sessions,
+                vcenterWsSessions=vcenter_ws_sessions,
             )
     except Exception as e:
         Logging.error(f"仮想マシン情報を取得中にエラーが発生しました: {e}")

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Generic, TypeVar, Optional, List
+from typing import Generic, TypeVar, Optional
 from datetime import datetime, UTC
 import uuid
 
@@ -9,11 +9,11 @@ T = TypeVar("T")
 class PaginationInfo(BaseModel):
     """ページネーション情報"""
 
-    total_count: int = Field(description="総件数")
+    totalCount: int = Field(description="総件数")
     offset: int = Field(description="現在のオフセット")
     limit: int = Field(description="取得件数制限")
-    has_next: bool = Field(description="次のページが存在するか")
-    has_previous: bool = Field(description="前のページが存在するか")
+    hasNext: bool = Field(description="次のページが存在するか")
+    hasPrevious: bool = Field(description="前のページが存在するか")
 
 
 class ApiResponse(BaseModel, Generic[T]):
@@ -26,20 +26,20 @@ class ApiResponse(BaseModel, Generic[T]):
         description="ページネーション情報",
         default=None,
         example=PaginationInfo(
-            total_count=1,
+            totalCount=1,
             offset=0,
             limit=1000,
-            has_next=False,
-            has_previous=False,
+            hasNext=False,
+            hasPrevious=False,
         ),
     )
-    vcenter_ws_sessions: Optional[dict] = Field(
+    vcenterWsSessions: Optional[dict] = Field(
         description="vCenterの接続状況",
         default=None,
         example={"vcenter01": "alive", "vcenter02": "dead"},
     )
     timestamp: str = Field(description="レスポンス生成時刻")
-    request_id: Optional[str] = Field(description="リクエストID", default=None)
+    requestId: Optional[str] = Field(description="リクエストID", default=None)
 
     @classmethod
     def create(
@@ -48,17 +48,17 @@ class ApiResponse(BaseModel, Generic[T]):
         success: bool = True,
         message: Optional[str] = None,
         pagination: Optional[PaginationInfo] = None,
-        vcenter_ws_sessions: Optional[dict] = None,
-        request_id: Optional[str] = None,
+        vcenterWsSessions: Optional[dict] = None,
+        requestId: Optional[str] = None,
     ):
         return cls(
             results=results,
             success=success,
             message=message,
             pagination=pagination,
-            vcenter_ws_sessions=vcenter_ws_sessions,
+            vcenterWsSessions=vcenterWsSessions,
             timestamp=datetime.now(UTC).isoformat(),
-            request_id=request_id or str(uuid.uuid4()),
+            requestId=requestId or str(uuid.uuid4()),
         )
 
 
@@ -69,20 +69,20 @@ class ErrorResponse(BaseModel):
     error: dict = Field(description="エラー情報")
     message: str = Field(description="エラーメッセージ")
     timestamp: str = Field(description="エラー発生時刻")
-    request_id: Optional[str] = Field(description="リクエストID", default=None)
+    requestId: Optional[str] = Field(description="リクエストID", default=None)
 
     @classmethod
     def create(
         cls,
-        error_code: str,
-        error_type: str,
+        errorCode: str,
+        errorType: str,
         message: str,
         details: Optional[dict] = None,
-        request_id: Optional[str] = None,
+        requestId: Optional[str] = None,
     ):
         return cls(
-            error={"code": error_code, "type": error_type, "details": details},
+            error={"code": errorCode, "type": errorType, "details": details},
             message=message,
             timestamp=datetime.now(UTC).isoformat(),
-            request_id=request_id or str(uuid.uuid4()),
+            requestId=requestId or str(uuid.uuid4()),
         )
