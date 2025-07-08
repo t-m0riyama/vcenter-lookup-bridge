@@ -16,15 +16,15 @@ class Connector(object):
     """vCenter接続(Web Service API)を管理するクラス"""
 
     # Const
-    VCENTER_CONNECT_TIMEOUT_SEC_DEFAULT = 60
-    VCENTER_CONNECT_RETRY_INTERVAL_SEC_DEFAULT = 30
+    VCENTER_CONNECT_TIMEOUT_SEC_DEFAULT = 20
+    VCENTER_CONNECT_RETRY_INTERVAL_SEC_DEFAULT = 20
     VCENTER_CONNECT_RETRY_MAX_COUNT_DEFAULT = 2
     VCENTER_CONNECTION_POOL_TIMEOUT_SEC_DEFAULT = 3600
     VCENTER_HTTP_PROXY_HOST_DEFAULT = "proxy.example.com"
     VCENTER_HTTP_PROXY_PORT_DEFAULT = 8080
 
     @classmethod
-    def _connect_vcenter(cls, config):
+    def _connect_vcenter(cls, config, vcenter_name):
         try:
             vcenter_connect_timeout = int(
                 os.getenv(
@@ -45,7 +45,9 @@ class Connector(object):
             vcenter_http_proxy_port = int(os.getenv("VLB_VCENTER_HTTP_PROXY_PORT", cls.VCENTER_HTTP_PROXY_PORT_DEFAULT))
 
             if vcenter_proxy_enabled:
-                Logging.info(f"HTTPプロキシを経由して、vCenter({config['hostname']}:{config['port']})に接続します")
+                Logging.info(
+                    f"HTTPプロキシを経由して、vCenter({vcenter_name} - {config['hostname']}:{config['port']})に接続します"
+                )
                 Logging.info(f"HTTPプロキシ: {vcenter_http_proxy_host}:{vcenter_http_proxy_port}")
                 si = SmartConnect(
                     host=config["hostname"],
@@ -70,29 +72,29 @@ class Connector(object):
                 )
         except TimeoutError as e:
             Logging.error(
-                f"vCenter({config['hostname']}:{config['port']})接続時にタイムアウトが発生しました(STATUS/{cs.EXIT_ERR_VCENTER_CONNECT_TIMEOUT_FAIL})"
+                f"vCenter({vcenter_name} - {config['hostname']}:{config['port']})接続時にタイムアウトが発生しました(STATUS/{cs.EXIT_ERR_VCENTER_CONNECT_TIMEOUT_FAIL})"
             )
             raise TimeoutError(e)
         except ConnectionRefusedError as e:
             Logging.error(
-                f"vCenter({config['hostname']}:{config['port']})に接続を拒否されました(STATUS/{cs.EXIT_ERR_VCENTER_CONNECT_REFUSED_FAIL})"
+                f"vCenter({vcenter_name} - {config['hostname']}:{config['port']})に接続を拒否されました(STATUS/{cs.EXIT_ERR_VCENTER_CONNECT_REFUSED_FAIL})"
             )
             raise ConnectionRefusedError(e)
         except socket.gaierror as e:
             Logging.error(
-                f"vCenter({config['hostname']}:{config['port']})に接続時にホスト名の解決に失敗しました(STATUS/{cs.EXIT_ERR_VCENTER_CONNECT_HOSTNAMRE_RESOLVE_FAIL})"
+                f"vCenter({vcenter_name} - {config['hostname']}:{config['port']})に接続時にホスト名の解決に失敗しました(STATUS/{cs.EXIT_ERR_VCENTER_CONNECT_HOSTNAMRE_RESOLVE_FAIL})"
             )
             raise socket.gaierror(e)
         except pyVmomi.vim.fault.InvalidLogin as e:
             Logging.error(
-                f"vCenter({config['hostname']}:{config['port']})に接続時にログインに失敗しました(STATUS/{cs.EXIT_ERR_VCENTER_CONNECT_LOGIN_FAIL})"
+                f"vCenter({vcenter_name} - {config['hostname']}:{config['port']})に接続時にログインに失敗しました(STATUS/{cs.EXIT_ERR_VCENTER_CONNECT_LOGIN_FAIL})"
             )
             Logging.error(e)
             # 認証情報が間違っている場合は、永続的なエラーとして異常終了する
             sys.exit(cs.EXIT_ERR_VCENTER_CONNECT_LOGIN_FAIL)
         except Exception as e:
             Logging.error(
-                f"vCenter({config['hostname']}:{config['port']})に接続時に不明なエラーが発生しました(STATUS/{cs.EXIT_ERR_VCENTER_CONNECT_UNKNOWN_FAIL})"
+                f"vCenter({vcenter_name} - {config['hostname']}:{config['port']})に接続時に不明なエラーが発生しました(STATUS/{cs.EXIT_ERR_VCENTER_CONNECT_UNKNOWN_FAIL})"
             )
             raise e
 
@@ -157,9 +159,7 @@ class Connector(object):
             try:
                 # 作成済みのService Instanceに対し、正常にリクエストを行えるかどうかを検査
                 if vcenter_name not in g.service_instances:
-                    raise Exception(
-                        f"vCenter({configs[vcenter_name]['hostname']}:{configs[vcenter_name]['port']})は未接続な状態です"
-                    )
+                    raise Exception(f"vCenter({vcenter_name} は設定が読み込まれていません。未接続な状態です。")
 
                 current_time = g.service_instances[vcenter_name].CurrentTime()
                 VCenterWSSessionManager.set_vcenter_ws_session(
@@ -170,17 +170,30 @@ class Connector(object):
             except:
                 # 一部のvCenterに接続できない場合、かつリトライ上限を超過した際は接続を諦めた上で、
                 # ダウン状態としてマークし、時間をおいて再接続を試みる
+                Logging.warning(
+                    f"vCenter({vcenter_name} - {configs[vcenter_name]['hostname']}:{configs[vcenter_name]['port']})は未接続です。再接続を試行します。"
+                )
                 while True:
                     try:
-                        si = cls._connect_vcenter(config=configs[vcenter_name])
+                        si = cls._connect_vcenter(config=configs[vcenter_name], vcenter_name=vcenter_name)
+                        current_time = si.CurrentTime()
+                        g.service_instances[vcenter_name] = si
+                        VCenterWSSessionManager.set_vcenter_ws_session(
+                            redis=redis,
+                            vcenter_name=vcenter_name,
+                            status=VCenterWSSessionManager.VCENTER_STATUS_ALIVE,
+                        )
+                        Logging.info(
+                            f"vCenter({vcenter_name} - {configs[vcenter_name]['hostname']}:{configs[vcenter_name]['port']})への（再）接続に成功しました。"
+                        )
                         break
                     except Exception as e:
                         connection_retry_count += 1
                         Logging.error(
-                            f"vCenter({configs[vcenter_name]['hostname']}:{configs[vcenter_name]['port']})への（再）接続に失敗しました"
+                            f"vCenter({vcenter_name} - {configs[vcenter_name]['hostname']}:{configs[vcenter_name]['port']})への（再）接続に失敗しました"
                         )
                         Logging.error(
-                            f"vCenter({configs[vcenter_name]['hostname']}:{configs[vcenter_name]['port']})接続エラー: {e}"
+                            f"vCenter({vcenter_name} - {configs[vcenter_name]['hostname']}:{configs[vcenter_name]['port']})接続エラー: {e}"
                         )
 
                         if connection_retry_count >= vcenter_connect_retry_max_count:
@@ -191,14 +204,10 @@ class Connector(object):
                                 status=VCenterWSSessionManager.VCENTER_STATUS_DEAD,
                             )
                             Logging.error(
-                                f"vCenter({configs[vcenter_name]['hostname']}:{configs[vcenter_name]['port']})への（再）接続に失敗しました。最大リトライ回数に達したため、ダウンした接続としてマークしました"
+                                f"vCenter({vcenter_name} - {configs[vcenter_name]['hostname']}:{configs[vcenter_name]['port']})への（再）接続に失敗しました。最大リトライ回数に達したため、ダウンした接続としてマークしました"
                             )
                             break
                         time.sleep(vcenter_connect_retry_interval)
-                g.service_instances[vcenter_name] = si
-                Logging.info(
-                    f"vCenter({configs[vcenter_name]['hostname']}:{configs[vcenter_name]['port']})への（再）接続に成功しました"
-                )
         return g.service_instances
 
     @classmethod
