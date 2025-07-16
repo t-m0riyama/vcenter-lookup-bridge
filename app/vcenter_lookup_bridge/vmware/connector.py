@@ -119,10 +119,8 @@ class Connector(object):
         return status
 
     @classmethod
-    def get_service_instances(cls, configs=None):
-        if configs is None:
-            configs = g.vcenter_configurations
-
+    def get_service_instances(cls):
+        configs = g.vcenter_configurations
         vcenter_connect_retry_interval = int(
             os.getenv(
                 "VLB_VCENTER_CONNECT_RETRY_INTERVAL_SEC",

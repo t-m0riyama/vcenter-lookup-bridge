@@ -46,9 +46,7 @@ async def lifespan(app: FastAPI):
                 Logging.info(f'vCenter Configuration Loaded: {config["name"]}')
                 g.vcenter_configurations[config["name"]] = config
     except Exception as e:
-        Logging.error(
-            f"vCenterの設定ファイルを読み込めませんでした(STATUS/{cs.EXIT_ERR_LOAD_CONFIG})"
-        )
+        Logging.error(f"vCenterの設定ファイルを読み込めませんでした(STATUS/{cs.EXIT_ERR_LOAD_CONFIG})")
         Logging.error(e)
         sys.exit(cs.EXIT_ERR_LOAD_CONFIG)
 
@@ -57,9 +55,7 @@ async def lifespan(app: FastAPI):
     FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
     Logging.info(redis)
 
-    Connector.get_service_instances(
-        configs=g.vcenter_configurations,
-    )
+    Connector.get_service_instances()
     Logging.info("Startup completed.")
     yield
     await redis.close()
