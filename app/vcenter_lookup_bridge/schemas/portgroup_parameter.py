@@ -1,4 +1,6 @@
 from pydantic import BaseModel, Field
+from vcenter_lookup_bridge.schemas.common import ApiResponse
+from typing import List
 
 
 class PortgroupSearchSchema(BaseModel):
@@ -27,6 +29,11 @@ class PortgroupSearchSchema(BaseModel):
         ge=1,
         le=1000,
     )
+    vcenter: str = Field(
+        description="vCenterの名前を指定します。",
+        default=None,
+        example="vcenter01",
+    )
     model_config = {"extra": "forbid"}
 
 
@@ -53,3 +60,9 @@ class PortgroupResponseSchema(BaseModel):
         description="ポートグループを利用可能なESXiホストを示します。",
         example=["host-01", "host-02"],
     )
+
+
+class PortgroupListResponseSchema(ApiResponse[List[PortgroupResponseSchema]]):
+    """ポートグループ一覧のレスポンススキーマ"""
+
+    pass

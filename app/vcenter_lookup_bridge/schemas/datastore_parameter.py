@@ -1,4 +1,6 @@
 from pydantic import BaseModel, Field
+from vcenter_lookup_bridge.schemas.common import ApiResponse
+from typing import List
 
 
 class DatastoreSearchSchema(BaseModel):
@@ -26,6 +28,11 @@ class DatastoreSearchSchema(BaseModel):
         example=100,
         ge=1,
         le=1000,
+    )
+    vcenter: str = Field(
+        description="vCenterの名前を指定します。",
+        default=None,
+        example="vcenter01",
     )
     model_config = {"extra": "forbid"}
 
@@ -65,3 +72,9 @@ class DatastoreResponseSchema(BaseModel):
         description="データストアをマウント済みのESXiホストを示します。",
         example=["host-01", "host-02"],
     )
+
+
+class DatastoreListResponseSchema(ApiResponse[List[DatastoreResponseSchema]]):
+    """ポートグループ一覧のレスポンススキーマ"""
+
+    pass
