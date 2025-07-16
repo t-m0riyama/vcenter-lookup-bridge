@@ -20,5 +20,5 @@ CMD gunicorn main:app \
     --access-logfile ./log/access.log \
     --access-logformat '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %(b)s %(D)s' \
     --error-logfile ./log/error.log \
-    --log-level info
-
+    --log-level info \
+    --timeout 120
