@@ -7,7 +7,7 @@ class VmSearchSchema(BaseModel):
     """仮想マシンのクエリパラメータのスキーマ"""
 
     vcenter: str = Field(
-        description="vCenterの名前を指定します。vCenter管理下の仮想マシン一覧を取得します。",
+        description="vCenterの名前を指定します。",
         default=None,
         example="vcenter01",
     )
@@ -36,7 +36,7 @@ class VmListSearchSchema(BaseModel):
         le=1000,
     )
     vcenter: str = Field(
-        description="vCenterの名前を指定します。vCenter管理下の仮想マシン一覧を取得します。",
+        description="vCenterの名前を指定します。",
         default=None,
         example="vcenter01",
     )
