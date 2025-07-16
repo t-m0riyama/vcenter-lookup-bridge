@@ -16,12 +16,12 @@ class Connector(object):
     """vCenter接続(Web Service API)を管理するクラス"""
 
     # Const
-    VCENTER_CONNECT_TIMEOUT_SEC_DEFAULT = 20
-    VCENTER_CONNECT_RETRY_INTERVAL_SEC_DEFAULT = 20
-    VCENTER_CONNECT_RETRY_MAX_COUNT_DEFAULT = 2
-    VCENTER_CONNECTION_POOL_TIMEOUT_SEC_DEFAULT = 3600
-    VCENTER_HTTP_PROXY_HOST_DEFAULT = "proxy.example.com"
-    VCENTER_HTTP_PROXY_PORT_DEFAULT = 8080
+    VLB_VCENTER_CONNECT_TIMEOUT_SEC_DEFAULT = 20
+    VLB_VCENTER_CONNECT_RETRY_INTERVAL_SEC_DEFAULT = 20
+    VLB_VCENTER_CONNECT_RETRY_MAX_COUNT_DEFAULT = 2
+    VLB_VCENTER_CONNECTION_POOL_TIMEOUT_SEC_DEFAULT = 3600
+    VLB_VCENTER_HTTP_PROXY_HOST_DEFAULT = "proxy.example.com"
+    VLB_VCENTER_HTTP_PROXY_PORT_DEFAULT = 8080
 
     @classmethod
     def _connect_vcenter(cls, config, vcenter_name):
@@ -29,20 +29,22 @@ class Connector(object):
             vcenter_connect_timeout = int(
                 os.getenv(
                     "VLB_VCENTER_CONNECT_TIMEOUT",
-                    cls.VCENTER_CONNECT_TIMEOUT_SEC_DEFAULT,
+                    cls.VLB_VCENTER_CONNECT_TIMEOUT_SEC_DEFAULT,
                 )
             )
             vcenter_connection_pool_timeout = int(
                 os.getenv(
                     "VLB_VCENTER_CONNECTION_POOL_TIMEOUT",
-                    cls.VCENTER_CONNECTION_POOL_TIMEOUT_SEC_DEFAULT,
+                    cls.VLB_VCENTER_CONNECTION_POOL_TIMEOUT_SEC_DEFAULT,
                 )
             )
             vcenter_proxy_enabled = bool(
                 setuptools.distutils.util.strtobool(os.getenv("VLB_VCENTER_HTTP_PROXY_ENABLED", "False"))
             )
-            vcenter_http_proxy_host = os.getenv("VLB_VCENTER_HTTP_PROXY_HOST", cls.VCENTER_HTTP_PROXY_HOST_DEFAULT)
-            vcenter_http_proxy_port = int(os.getenv("VLB_VCENTER_HTTP_PROXY_PORT", cls.VCENTER_HTTP_PROXY_PORT_DEFAULT))
+            vcenter_http_proxy_host = os.getenv("VLB_VCENTER_HTTP_PROXY_HOST", cls.VLB_VCENTER_HTTP_PROXY_HOST_DEFAULT)
+            vcenter_http_proxy_port = int(
+                os.getenv("VLB_VCENTER_HTTP_PROXY_PORT", cls.VLB_VCENTER_HTTP_PROXY_PORT_DEFAULT)
+            )
 
             if vcenter_proxy_enabled:
                 Logging.info(
@@ -124,13 +126,13 @@ class Connector(object):
         vcenter_connect_retry_interval = int(
             os.getenv(
                 "VLB_VCENTER_CONNECT_RETRY_INTERVAL_SEC",
-                cls.VCENTER_CONNECT_RETRY_INTERVAL_SEC_DEFAULT,
+                cls.VLB_VCENTER_CONNECT_RETRY_INTERVAL_SEC_DEFAULT,
             )
         )
         vcenter_connect_retry_max_count = int(
             os.getenv(
                 "VLB_VCENTER_CONNECT_RETRY_MAX_COUNT",
-                cls.VCENTER_CONNECT_RETRY_MAX_COUNT_DEFAULT,
+                cls.VLB_VCENTER_CONNECT_RETRY_MAX_COUNT_DEFAULT,
             )
         )
 
