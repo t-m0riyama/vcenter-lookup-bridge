@@ -54,7 +54,7 @@ class Vm(object):
                 )
                 all_vms.extend(vms)
             except Exception as e:
-                Logging.error(f"vCenter({vcenter_name})からのVM取得に失敗: {e}")
+                Logging.error(f"vCenter({vcenter_name})からの仮想マシン情報取得に失敗: {e}")
         else:
             # vCenterを指定しない場合、すべてのvCenterから仮想マシン一覧を取得
             futures = {}
