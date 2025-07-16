@@ -112,7 +112,7 @@ class Snapshot(object):
         search_index = content.searchIndex
         vm_count = 0
         all_vm_count = cls._count_all_vms(content)
-        Logging.info(f"{all_vm_count} VMs in vCenter({vcenter_name})")
+        Logging.info(f"{all_vm_count}台の仮想マシンがvCenter({vcenter_name})に存在します。")
 
         for vm_folder in vm_folders:
             folder = search_index.FindByInventoryPath(f"/{datacenter.name}/vm/{base_vm_folder}/{vm_folder}/")
@@ -190,7 +190,7 @@ class Snapshot(object):
                         if snapshots is not None:
                             all_snapshots.append(snapshots)
                 except HTTPException as e:
-                    Logging.info(f"vCenter({vcenter_name})からのVM取得に失敗: {e}")
+                    Logging.info(f"vCenter({vcenter_name})からのスナップショット情報取得に失敗: {e}")
                     pass
                 except Exception as e:
                     raise e
@@ -261,6 +261,15 @@ class Snapshot(object):
             # スナップショットの名前はURLエンコードされている為、デコードする
             snapshot_name = urllib.parse.unquote(snapshot.name)
 
+            # 子スナップショットの有無を確認し、has_childを設定
+            if hasattr(snapshot, "childSnapshotList"):
+                if len(list(snapshot.childSnapshotList)) > 0:
+                    has_child = True
+                else:
+                    has_child = False
+            else:
+                has_child = False
+
             vm_snapshot_info.append(
                 {
                     "vcenter": vcenter_name,
@@ -270,19 +279,22 @@ class Snapshot(object):
                     "vmFolder": vm_folder,
                     "name": snapshot_name,
                     "id": snapshot.id,
+                    "parentId": snapshot.parent_id if hasattr(snapshot, "parent_id") else -1,
                     "description": snapshot.description,
                     "createTime": create_time,
+                    "hasChild": has_child,
                 }
             )
         return vm_snapshot_info
 
     @staticmethod
-    def _get_snapshots_recursively(snapshot_list):
+    def _get_snapshots_recursively(snapshot_list, parent_id: int = -1):
         snapshots = []
         for snapshot in snapshot_list:
+            snapshot.__dict__["parent_id"] = parent_id
             snapshots.append(snapshot)
 
             # 子スナップショットが存在する場合、取得する
             if hasattr(snapshot, "childSnapshotList"):
-                snapshots = snapshots + Snapshot._get_snapshots_recursively(snapshot.childSnapshotList)
+                snapshots = snapshots + Snapshot._get_snapshots_recursively(snapshot.childSnapshotList, snapshot.id)
         return snapshots

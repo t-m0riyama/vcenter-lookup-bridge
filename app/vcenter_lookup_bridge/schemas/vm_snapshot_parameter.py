@@ -54,6 +54,10 @@ class VmSnapshotResponseSchema(BaseModel):
         description="スナップショットのIDを示します。",
         example=123,
     )
+    parentId: int | None = Field(
+        description="スナップショットの親スナップショットのIDを示します。",
+        example=12,
+    )
     description: str | None = Field(
         description="スナップショットの説明を示します。",
         example="設定変更前に取得 2025/07/07",
@@ -61,6 +65,10 @@ class VmSnapshotResponseSchema(BaseModel):
     createTime: str = Field(
         description="スナップショットの作成日時を示します。",
         example="2025/01/01 12:00:00",
+    )
+    hasChild: bool = Field(
+        description="このスナップショットを元とした子スナップショットが存在する場合はTrue、存在しない場合はFalseがセットされます。",
+        example=False,
     )
     vmName: str = Field(
         description="仮想マシンの名前を示します。",
