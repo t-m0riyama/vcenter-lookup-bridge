@@ -28,13 +28,13 @@ class Connector(object):
         try:
             vcenter_connect_timeout = int(
                 os.getenv(
-                    "VLB_VCENTER_CONNECT_TIMEOUT",
+                    "VLB_VCENTER_CONNECT_TIMEOUT_SEC",
                     cls.VLB_VCENTER_CONNECT_TIMEOUT_SEC_DEFAULT,
                 )
             )
             vcenter_connection_pool_timeout = int(
                 os.getenv(
-                    "VLB_VCENTER_CONNECTION_POOL_TIMEOUT",
+                    "VLB_VCENTER_CONNECTION_POOL_TIMEOUT_SEC",
                     cls.VLB_VCENTER_CONNECTION_POOL_TIMEOUT_SEC_DEFAULT,
                 )
             )
@@ -136,6 +136,7 @@ class Connector(object):
 
         # VMware WS APIのService Instanceのリストが作成されていない場合、インスタンスを保持するリストを初期化する
         if not hasattr(g, "service_instances"):
+            Logging.warning(f"vCenter Web Service APIのService Instanceを保持するリストを初期化します。")
             g.service_instances = {}
 
         # テスト環境の場合はモックを返す
@@ -159,7 +160,7 @@ class Connector(object):
             try:
                 # 作成済みのService Instanceに対し、正常にリクエストを行えるかどうかを検査
                 if vcenter_name not in g.service_instances:
-                    raise Exception(f"vCenter({vcenter_name} は設定が読み込まれていません。未接続な状態です。")
+                    raise Exception(f"vCenter({vcenter_name}) のService Instanceが未作成です。")
 
                 current_time = g.service_instances[vcenter_name].CurrentTime()
                 VCenterWSSessionManager.set_vcenter_ws_session(
@@ -167,7 +168,7 @@ class Connector(object):
                     vcenter_name=vcenter_name,
                     status=VCenterWSSessionManager.VCENTER_STATUS_ALIVE,
                 )
-            except:
+            except Exception as e:
                 # 一部のvCenterに接続できない場合、かつリトライ上限を超過した際は接続を諦めた上で、
                 # ダウン状態としてマークし、時間をおいて再接続を試みる
                 Logging.warning(
