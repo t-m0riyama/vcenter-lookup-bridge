@@ -22,8 +22,8 @@ class VCenterWSSessionManager:
     Attributes:
         VLB_CACHE_HOSTNAME_DEFAULT (str): Redisサーバーのデフォルトホスト名
         VLB_CACHE_PORT_DEFAULT (int): Redisサーバーのデフォルトポート番号
-        VLB_VCENTER_WS_SESSION_PREFIX (str): vCenter接続状態のキープレフィックス
-        VLB_VCENTER_WS_SESSION_EXPIRE_SEC_DEFAULT (int): 接続状態のデフォルト有効期限（秒）
+        VCENTER_WS_SESSION_PREFIX (str): vCenter接続状態のキープレフィックス
+        VCENTER_WS_SESSION_EXPIRE_SEC (int): 接続状態のデフォルト有効期限（秒）
         VCENTER_STATUS_ALIVE (str): 接続状態が正常であることを示す値
         VCENTER_STATUS_DEAD (str): 接続状態が異常であることを示す値
         VCENTER_NAME_PATTERN (str): vCenter名の正規表現パターン
@@ -37,8 +37,8 @@ class VCenterWSSessionManager:
     # 定数定義
     VLB_CACHE_HOSTNAME_DEFAULT = "cache"
     VLB_CACHE_PORT_DEFAULT = 6379
-    VLB_VCENTER_WS_SESSION_PREFIX = "vlb_vcenter_ws_session:"
-    VLB_VCENTER_WS_SESSION_EXPIRE_SEC_DEFAULT = 120
+    VCENTER_WS_SESSION_PREFIX = "vlb_vcenter_ws_session:"
+    VCENTER_WS_SESSION_EXPIRE_SEC = 120
     VCENTER_STATUS_ALIVE = "alive"
     VCENTER_STATUS_DEAD = "dead"
     VCENTER_NAME_PATTERN = r"^[a-zA-Z0-9_-]+$"
@@ -122,7 +122,7 @@ class VCenterWSSessionManager:
         vcenter_name: str,
         status: VCenterStatus = VCENTER_STATUS_ALIVE,
         not_exist: bool = False,
-        expire_seconds: int = VLB_VCENTER_WS_SESSION_EXPIRE_SEC_DEFAULT,
+        expire_seconds: int = VCENTER_WS_SESSION_EXPIRE_SEC,
     ) -> None:
         """
         vCenterの接続状態を登録します
@@ -139,7 +139,7 @@ class VCenterWSSessionManager:
         """
         try:
             VCenterWSSessionManager.validate_vcenter_name(vcenter_name)
-            key = f"{VCenterWSSessionManager.VLB_VCENTER_WS_SESSION_PREFIX}{vcenter_name}"
+            key = f"{VCenterWSSessionManager.VCENTER_WS_SESSION_PREFIX}{vcenter_name}"
             redis.set(key, status, nx=not_exist, ex=expire_seconds)
         except (RedisError, ConnectionError, TimeoutError) as e:
             raise VCenterWSSessionError(f"vCenter接続状態の登録に失敗しました: {str(e)}")
@@ -150,7 +150,7 @@ class VCenterWSSessionManager:
         vcenter_name: str,
         status: VCenterStatus = VCENTER_STATUS_ALIVE,
         not_exist: bool = False,
-        expire_seconds: int = VLB_VCENTER_WS_SESSION_EXPIRE_SEC_DEFAULT,
+        expire_seconds: int = VCENTER_WS_SESSION_EXPIRE_SEC,
     ) -> None:
         """
         vCenterの接続状態を登録します
@@ -167,7 +167,7 @@ class VCenterWSSessionManager:
         """
         try:
             VCenterWSSessionManager.validate_vcenter_name(vcenter_name)
-            key = f"{VCenterWSSessionManager.VLB_VCENTER_WS_SESSION_PREFIX}{vcenter_name}"
+            key = f"{VCenterWSSessionManager.VCENTER_WS_SESSION_PREFIX}{vcenter_name}"
             await redis.set(key, status, nx=not_exist, ex=expire_seconds)
         except (RedisError, ConnectionError, TimeoutError) as e:
             raise VCenterWSSessionError(f"vCenter接続状態の登録に失敗しました: {str(e)}")
@@ -189,7 +189,7 @@ class VCenterWSSessionManager:
         """
         try:
             VCenterWSSessionManager.validate_vcenter_name(vcenter_name)
-            result = redis.get(f"{VCenterWSSessionManager.VLB_VCENTER_WS_SESSION_PREFIX}{vcenter_name}")
+            result = redis.get(f"{VCenterWSSessionManager.VCENTER_WS_SESSION_PREFIX}{vcenter_name}")
             return result.decode("utf-8") if result else None
         except (RedisError, ConnectionError, TimeoutError) as e:
             raise VCenterWSSessionError(f"vCenter接続状態の取得に失敗しました: {str(e)}")
@@ -211,7 +211,7 @@ class VCenterWSSessionManager:
         """
         try:
             VCenterWSSessionManager.validate_vcenter_name(vcenter_name)
-            result = await redis.get(f"{VCenterWSSessionManager.VLB_VCENTER_WS_SESSION_PREFIX}{vcenter_name}")
+            result = await redis.get(f"{VCenterWSSessionManager.VCENTER_WS_SESSION_PREFIX}{vcenter_name}")
             return result.decode("utf-8") if result else None
         except (RedisError, ConnectionError, TimeoutError) as e:
             raise VCenterWSSessionError(f"vCenter接続状態の取得に失敗しました: {str(e)}")
@@ -235,7 +235,7 @@ class VCenterWSSessionManager:
         try:
             if redis is None:
                 redis = VCenterWSSessionManager.initialize()
-            vcenter_keys = redis.keys(f"{VCenterWSSessionManager.VLB_VCENTER_WS_SESSION_PREFIX}*")
+            vcenter_keys = redis.keys(f"{VCenterWSSessionManager.VCENTER_WS_SESSION_PREFIX}*")
             vcenter_ws_sessions = {}
             for vcenter_key in vcenter_keys:
                 try:
@@ -266,7 +266,7 @@ class VCenterWSSessionManager:
             VCenterWSSessionError: Redis操作に失敗した場合
         """
         try:
-            vcenter_keys = await redis.keys(f"{VCenterWSSessionManager.VLB_VCENTER_WS_SESSION_PREFIX}*")
+            vcenter_keys = await redis.keys(f"{VCenterWSSessionManager.VCENTER_WS_SESSION_PREFIX}*")
             vcenter_ws_sessions = {}
             for vcenter_key in vcenter_keys:
                 try:
