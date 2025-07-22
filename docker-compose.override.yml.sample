@@ -18,9 +18,30 @@ services:
 
       # 1つのリクエストに対して、複数のvCenterのWeb Service APIを呼び出す際、利用する最大スレッド数
       # 接続先vCenterの数以下に設定する
-      - VLB_MAX_VCENTER_WEB_SERVICE_WORKER_THREADS=4
+      - VLB_MAX_VCENTER_WEB_SERVICE_WORKER_THREADS=10
 
-      # Function logger 有効/無効
+      # vCenterのWeb Service APIに利用する際の接続タイムアウト（秒）
+      - VLB_VCENTER_CONNECT_TIMEOUT_SEC = 20
+      # vCenterのWeb Service APIに利用する際、リトライ間隔（秒）
+      - VLB_VCENTER_CONNECT_RETRY_INTERVAL_SEC = 20
+      # vCenterのWeb Service APIに利用する際、最大リトライ回数
+      - VLB_VCENTER_CONNECT_RETRY_MAX_COUNT = 2
+
+      # vCenterのWeb Service APIに利用する際、コネクションプールを維持する時間（秒）
+      # この時間を超過した場合、コネクションを切断する。
+      #- VLB_VCENTER_CONNECTION_POOL_TIMEOUT_SEC = 3600
+
+      # vCenterのWeb Service APIにHTTPプロキシ経由での接続を有効化。（True: 有効、False: 無効）
+      #- VLB_VCENTER_HTTP_PROXY_ENABLED = True
+      # vCenterのWeb Service APIにHTTPプロキシ経由で接続する場合のプロキシのホスト名
+      #- VLB_VCENTER_HTTP_PROXY_HOST = "proxy.example.com"
+      # vCenterのWeb Service APIにHTTPプロキシ経由で接続する場合のプロキシのポート番号
+      #- VLB_VCENTER_HTTP_PROXY_PORT = 8080
+      # vCenterのREST APIにHTTPプロキシ経由で接続。
+      # ※VLB_VCENTER_HTTP_PROXY_ENABLEDの設定に優先して利用される。
+      #- https_proxy = http://proxy.example.com
+
+      # Function logger 有効/無効（True: 有効、False: 無効）
       - VLB_FUNC_LOGGER_ENABLED=True
 
       # Function logger の出力に引数を含める
