@@ -1,7 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Generic, TypeVar, Optional
 from datetime import datetime, UTC
-import uuid
 
 T = TypeVar("T")
 
@@ -58,7 +57,7 @@ class ApiResponse(BaseModel, Generic[T]):
             pagination=pagination,
             vcenterWsSessions=vcenterWsSessions,
             timestamp=datetime.now(UTC).isoformat(),
-            requestId=requestId or str(uuid.uuid4()),
+            requestId=requestId,
         )
 
 
@@ -84,5 +83,5 @@ class ErrorResponse(BaseModel):
             error={"code": errorCode, "type": errorType, "details": details},
             message=message,
             timestamp=datetime.now(UTC).isoformat(),
-            requestId=requestId or str(uuid.uuid4()),
+            requestId=requestId,
         )
