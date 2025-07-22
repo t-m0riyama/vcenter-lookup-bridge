@@ -44,7 +44,7 @@ class Snapshot(object):
         if vcenter_name:
             # vCenterを指定した場合、指定したvCenterから仮想マシン一覧を取得し、各仮想マシンの持つスナップショット情報を取得
             try:
-                snapshots = cls.get_vm_snapshots_by_vm_folders_from_vcenter(
+                snapshots = cls._get_vm_snapshots_by_vm_folders_from_vcenter(
                     vcenter_name=vcenter_name,
                     service_instances=service_instances,
                     configs=configs,
@@ -63,7 +63,7 @@ class Snapshot(object):
                     # 各vCenterから仮想マシン一覧を取得するスレッドを作成
                     for vcenter_name in configs.keys():
                         futures[vcenter_name] = executor.submit(
-                            cls.get_vm_snapshots_by_vm_folders_from_vcenter,
+                            cls._get_vm_snapshots_by_vm_folders_from_vcenter,
                             vcenter_name,
                             service_instances,
                             configs,
@@ -88,7 +88,7 @@ class Snapshot(object):
         return all_snapshots
 
     @classmethod
-    def get_vm_snapshots_by_vm_folders_from_vcenter(
+    def _get_vm_snapshots_by_vm_folders_from_vcenter(
         cls,
         vcenter_name: str,
         service_instances: dict,
@@ -111,8 +111,6 @@ class Snapshot(object):
         base_vm_folder = config["base_vm_folder"]
         search_index = content.searchIndex
         vm_count = 0
-        all_vm_count = cls._count_all_vms(content)
-        Logging.info(f"{all_vm_count}台の仮想マシンがvCenter({vcenter_name})に存在します。")
 
         for vm_folder in vm_folders:
             folder = search_index.FindByInventoryPath(f"/{datacenter.name}/vm/{base_vm_folder}/{vm_folder}/")
@@ -144,9 +142,10 @@ class Snapshot(object):
     @classmethod
     def get_vm_snapshot_by_instance_uuid_from_all_vcenters(
         cls,
+        vcenter_name: str,
         service_instances,
         instance_uuid: str,
-        vcenter_name: Optional[str] = None,
+        requestId: str = None,
     ) -> list[VmSnapshotResponseSchema]:
         all_snapshots = []
         max_vcenter_web_service_worker_threads = int(
@@ -159,10 +158,11 @@ class Snapshot(object):
         if vcenter_name:
             # vCenterを指定した場合、指定したvCenterから仮想マシン一覧を取得
             try:
-                snapshots = cls.get_vm_snapshot_by_instance_uuid(
+                snapshots = cls._get_vm_snapshot_by_instance_uuid(
                     vcenter_name=vcenter_name,
                     service_instances=service_instances,
                     instance_uuid=instance_uuid,
+                    requestId=requestId,
                 )
                 if snapshots is not None:
                     all_snapshots.append(snapshots)
@@ -178,10 +178,11 @@ class Snapshot(object):
                     # 各vCenterから仮想マシン一覧を取得するスレッドを作成
                     for vcenter_name in service_instances.keys():
                         futures[vcenter_name] = executor.submit(
-                            cls.get_vm_snapshot_by_instance_uuid,
+                            cls._get_vm_snapshot_by_instance_uuid,
                             vcenter_name,
                             service_instances,
                             instance_uuid,
+                            requestId,
                         )
 
                     # 各スレッドの実行結果を回収
@@ -190,23 +191,24 @@ class Snapshot(object):
                         if snapshots is not None:
                             all_snapshots.append(snapshots)
                 except HTTPException as e:
-                    Logging.info(f"vCenter({vcenter_name})からのスナップショット情報取得に失敗: {e}")
+                    Logging.info(f"{requestId} vCenter({vcenter_name})からのスナップショット情報取得に失敗: {e}")
                     pass
                 except Exception as e:
                     raise e
         return all_snapshots
 
     @classmethod
-    def get_vm_snapshot_by_instance_uuid(
+    def _get_vm_snapshot_by_instance_uuid(
         cls,
         vcenter_name: str,
         service_instances: dict,
         instance_uuid: str,
+        requestId: str = None,
     ) -> list[VmSnapshotResponseSchema]:
 
         # 指定されたvCenterのService Instanceを取得
         if vcenter_name not in service_instances:
-            raise HTTPException(status_code=404, detail=f"vCenter({vcenter_name}) not found")
+            raise HTTPException(status_code=404, detail=f"{requestId} vCenter({vcenter_name}) not found")
 
         content = service_instances[vcenter_name].RetrieveContent()
         datacenter = content.rootFolder.childEntity[0]
@@ -228,14 +230,6 @@ class Snapshot(object):
             )
         else:
             return None
-
-    @classmethod
-    def _count_all_vms(cls, content) -> int:
-        root_folder = content.rootFolder
-        view_vms = content.viewManager.CreateContainerView(
-            container=root_folder, type=[vim.VirtualMachine], recursive=True
-        )
-        return len(view_vms.view)
 
     @classmethod
     def _generate_vm_snapshot_info(

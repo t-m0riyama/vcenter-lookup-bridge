@@ -1,4 +1,5 @@
 import os
+import uuid
 import vcenter_lookup_bridge.vmware.instances as g
 
 from typing import Annotated
@@ -28,6 +29,7 @@ async def list_datastores(
     search_params: Annotated[DatastoreSearchSchema, Query()],
     service_instances: object = Depends(Connector.get_service_instances),
 ):
+    requestId = str(uuid.uuid4())
     try:
         vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations()
         datastores = Datastore.get_datastores_by_tags_from_all_vcenters(
@@ -36,6 +38,7 @@ async def list_datastores(
             tag_category=search_params.tag_category,
             tags=search_params.tags,
             vcenter_name=search_params.vcenter,
+            requestId=requestId,
         )
         if datastores:
             pagination = PaginationInfo(
@@ -52,6 +55,7 @@ async def list_datastores(
                 message=f"{len(datastores)}件のデータストア情報を取得しました。",
                 pagination=pagination,
                 vcenterWsSessions=vcenter_ws_sessions,
+                requestId=requestId,
             )
         else:
             # データが見つからない場合の部分成功
@@ -60,7 +64,8 @@ async def list_datastores(
                 success=False,
                 message="指定した条件のデータストア情報は見つかりませんでした。",
                 vcenterWsSessions=vcenter_ws_sessions,
+                requestId=requestId,
             )
     except Exception as e:
-        Logging.error(f"ポデータストア情報の一覧を取得中にエラーが発生しました: {e}")
+        Logging.error(f"ポデータストア情報の一覧を取得中にエラーが発生しました({requestId}): {e}")
         raise e

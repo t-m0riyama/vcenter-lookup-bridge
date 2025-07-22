@@ -15,7 +15,7 @@ class Datastore(object):
 
     # Const
     VLB_MAX_RETRIEVE_VCENTER_OBJECTS_DEFAULT = 1000
-    VLB_MAX_VCENTER_WEB_SERVICE_WORKER_THREADS_DEFAULT = 4
+    VLB_MAX_VCENTER_WEB_SERVICE_WORKER_THREADS_DEFAULT = 10
 
     @classmethod
     def get_datastores_by_tags_from_all_vcenters(
@@ -27,8 +27,10 @@ class Datastore(object):
         vcenter_name: Optional[str] = None,
         offset=0,
         max_results=100,
+        requestId: str = None,
     ) -> list[DatastoreResponseSchema]:
-        """全vCenterから仮想マシン一覧を取得"""
+        """全vCenterからデータストア一覧を取得"""
+
         all_datastores = []
         offset_vcenter = 0
         max_retrieve_vcenter_objects = int(
@@ -47,7 +49,7 @@ class Datastore(object):
         if vcenter_name:
             # vCenterを指定した場合、指定したvCenterからポートグループ一覧を取得
             try:
-                datastores = cls.get_datastores_by_tags(
+                datastores = cls._get_datastores_by_tags(
                     vcenter_name=vcenter_name,
                     service_instances=service_instances,
                     configs=configs,
@@ -55,10 +57,11 @@ class Datastore(object):
                     tags=tags,
                     offset=offset,
                     max_results=max_results,
+                    requestId=requestId,
                 )
                 all_datastores.extend(datastores)
             except Exception as e:
-                Logging.error(f"vCenter({vcenter_name})からのデータストア情報取得に失敗: {e}")
+                Logging.error(f"{requestId} vCenter({vcenter_name})からのデータストア情報取得に失敗: {e}")
         else:
             # vCenterを指定しない場合、すべてのvCenterからデータストア一覧を取得
             futures = {}
@@ -67,7 +70,7 @@ class Datastore(object):
                     # 各vCenterからデータストア一覧を取得するスレッドを作成
                     for vcenter_name in configs.keys():
                         futures[vcenter_name] = executor.submit(
-                            cls.get_datastores_by_tags,
+                            cls._get_datastores_by_tags,
                             vcenter_name,
                             service_instances,
                             configs,
@@ -75,12 +78,13 @@ class Datastore(object):
                             tags,
                             offset_vcenter,
                             max_retrieve_vcenter_objects,
+                            requestId,
                         )
 
                     # 各スレッドの実行結果を回収
                     for vcenter_name in configs.keys():
                         datastores = futures[vcenter_name].result()
-                        Logging.info(f"vCenter({vcenter_name})からのデータストア情報取得に成功: {datastores}")
+                        Logging.info(f"{requestId} vCenter({vcenter_name})からのデータストア情報取得に成功")
                         all_datastores.extend(datastores)
 
                     # オフセットと最大件数の調整
@@ -89,12 +93,12 @@ class Datastore(object):
                         all_datastores = all_datastores[:max_results]
 
                 except Exception as e:
-                    Logging.error(f"vCenter({vcenter_name})からのデータストア情報取得に失敗: {e}")
+                    Logging.error(f"{requestId} vCenter({vcenter_name})からのデータストア情報取得に失敗: {e}")
 
         return all_datastores
 
     @classmethod
-    def get_datastores_by_tags(
+    def _get_datastores_by_tags(
         cls,
         vcenter_name: str,
         service_instances: dict,
@@ -103,7 +107,10 @@ class Datastore(object):
         tags: list[str],
         offset: int = 0,
         max_results: int = 100,
+        requestId: str = None,
     ) -> list[DatastoreResponseSchema]:
+        """指定したvCenterからデータストア一覧を取得"""
+
         results = []
         datastore_count = 0
 
@@ -138,6 +145,11 @@ class Datastore(object):
                             datastore_config["tags"] = datastore_tags[datastore_name][tag_category]
 
                             for attached_tag in datastore_tags[datastore_name][tag_category]:
+                                # すでに結果に追加済みのデータストアであれば、スキップ
+                                if datastore_name in [result["name"] for result in results]:
+                                    continue
+
+                                # タグが一致していれば、結果に追加
                                 if str(attached_tag) in tags:
                                     results.append(datastore_config)
                                     datastore_count += 1
@@ -145,6 +157,8 @@ class Datastore(object):
 
     @classmethod
     def _generate_datastore_info(cls, datastore, content, vcenter_name: str):
+        """データストア情報を生成"""
+
         if isinstance(datastore, vim.Datastore):
             # データストアをマウントしているホストの情報を取得
             hosts = []

@@ -13,7 +13,7 @@ class Vm(object):
 
     # Const
     VLB_MAX_RETRIEVE_VCENTER_OBJECTS_DEFAULT = 1000
-    VLB_MAX_VCENTER_WEB_SERVICE_WORKER_THREADS_DEFAULT = 4
+    VLB_MAX_VCENTER_WEB_SERVICE_WORKER_THREADS_DEFAULT = 10
 
     @classmethod
     def get_vms_from_all_vcenters(
@@ -24,8 +24,10 @@ class Vm(object):
         vcenter_name: Optional[str] = None,
         offset=0,
         max_results=100,
+        requestId: str = None,
     ) -> list[VmResponseSchema]:
         """全vCenterから仮想マシン一覧を取得"""
+
         all_vms = []
         offset_vcenter = 0
         max_retrieve_vcenter_objects = int(
@@ -44,13 +46,14 @@ class Vm(object):
         if vcenter_name:
             # vCenterを指定した場合、指定したvCenterから仮想マシン一覧を取得
             try:
-                vms = cls.get_vms_by_vm_folders_from_vcenter(
+                vms = cls._get_vms_by_vm_folders_from_vcenter(
                     vcenter_name=vcenter_name,
                     service_instances=service_instances,
                     configs=configs,
                     vm_folders=vm_folders,
                     offset=offset,
                     max_results=max_results,
+                    requestId=requestId,
                 )
                 all_vms.extend(vms)
             except Exception as e:
@@ -63,18 +66,20 @@ class Vm(object):
                     # 各vCenterから仮想マシン一覧を取得するスレッドを作成
                     for vcenter_name in configs.keys():
                         futures[vcenter_name] = executor.submit(
-                            cls.get_vms_by_vm_folders_from_vcenter,
+                            cls._get_vms_by_vm_folders_from_vcenter,
                             vcenter_name,
                             service_instances,
                             configs,
                             vm_folders,
                             offset_vcenter,
                             max_retrieve_vcenter_objects,
+                            requestId,
                         )
 
                     # 各スレッドの実行結果を回収
                     for vcenter_name in configs.keys():
                         vms = futures[vcenter_name].result()
+                        Logging.info(f"{requestId} vCenter({vcenter_name})からの仮想マシン情報取得に成功")
                         all_vms.extend(vms)
 
                     # オフセットと最大件数の調整
@@ -83,12 +88,12 @@ class Vm(object):
                         all_vms = all_vms[:max_results]
 
                 except Exception as e:
-                    Logging.error(f"vCenter({vcenter_name})からのVM取得に失敗: {e}")
+                    Logging.error(f"{requestId} vCenter({vcenter_name})からのVM取得に失敗: {e}")
 
         return all_vms
 
     @classmethod
-    def get_vms_by_vm_folders_from_vcenter(
+    def _get_vms_by_vm_folders_from_vcenter(
         cls,
         vcenter_name: str,
         service_instances: dict,
@@ -96,8 +101,10 @@ class Vm(object):
         vm_folders: List[str],
         offset=0,
         max_results=100,
+        requestId: str = None,
     ) -> list[VmResponseSchema]:
         """特定のvCenterから仮想マシン一覧を取得"""
+
         results = []
 
         # 指定されたvCenterのService Instanceを取得
@@ -111,13 +118,15 @@ class Vm(object):
         base_vm_folder = config["base_vm_folder"]
         search_index = content.searchIndex
         vm_count = 0
-        all_vm_count = cls._count_all_vms(content)
-        Logging.info(f"{all_vm_count} VMs in vCenter({vcenter_name})")
+        # all_vm_count = cls._count_all_vms(content)
+        # Logging.info(f"{all_vm_count} VMs in vCenter({vcenter_name})")
 
         for vm_folder in vm_folders:
             folder = search_index.FindByInventoryPath(f"/{datacenter.name}/vm/{base_vm_folder}/{vm_folder}/")
             if folder is None:
-                Logging.info(f"vCenter({vcenter_name})の仮想マシンフォルダ({vm_folder})が見つかりませんでした。")
+                Logging.info(
+                    f"{requestId} vCenter({vcenter_name})の仮想マシンフォルダ({vm_folder})が見つかりませんでした。"
+                )
                 continue
 
             if vm_count >= offset + max_results:
@@ -145,10 +154,13 @@ class Vm(object):
     @classmethod
     def get_vm_by_instance_uuid_from_all_vcenters(
         cls,
-        service_instances,
+        vcenter_name: str,
+        service_instances: dict,
         instance_uuid: str,
-        vcenter_name: Optional[str] = None,
+        requestId: str = None,
     ) -> list[VmResponseSchema]:
+        """全vCenterから仮想マシン一覧を取得"""
+
         all_vms = []
         max_vcenter_web_service_worker_threads = int(
             os.getenv(
@@ -160,7 +172,7 @@ class Vm(object):
         if vcenter_name:
             # vCenterを指定した場合、指定したvCenterから仮想マシン一覧を取得
             try:
-                vms = cls.get_vm_by_instance_uuid(
+                vms = cls._get_vm_by_instance_uuid(
                     vcenter_name=vcenter_name,
                     service_instances=service_instances,
                     instance_uuid=instance_uuid,
@@ -168,7 +180,7 @@ class Vm(object):
                 if vms is not None:
                     all_vms.append(vms)
             except HTTPException as e:
-                Logging.info(f"vCenter({vcenter_name})からのVM取得に失敗: {e}")
+                Logging.info(f"{requestId} vCenter({vcenter_name})からのVM取得に失敗: {e}")
                 pass
             except Exception as e:
                 raise e
@@ -180,7 +192,7 @@ class Vm(object):
                     # 各vCenterから仮想マシン一覧を取得するスレッドを作成
                     for vcenter_name in service_instances.keys():
                         futures[vcenter_name] = executor.submit(
-                            cls.get_vm_by_instance_uuid,
+                            cls._get_vm_by_instance_uuid,
                             vcenter_name,
                             service_instances,
                             instance_uuid,
@@ -192,19 +204,21 @@ class Vm(object):
                         if vms is not None:
                             all_vms.append(vms)
                 except HTTPException as e:
-                    Logging.info(f"vCenter({vcenter_name})からのVM取得に失敗: {e}")
+                    Logging.info(f"{requestId} vCenter({vcenter_name})からのVM取得に失敗: {e}")
                     pass
                 except Exception as e:
                     raise e
         return all_vms
 
     @classmethod
-    def get_vm_by_instance_uuid(
+    def _get_vm_by_instance_uuid(
         cls,
         vcenter_name: str,
         service_instances: dict,
         instance_uuid: str,
+        requestId: str = None,
     ) -> VmResponseSchema:
+        """インスタンスUUIDとvCenterを指定して、仮想マシン情報を取得"""
 
         # 指定されたvCenterのService Instanceを取得
         if vcenter_name not in service_instances:
@@ -244,6 +258,8 @@ class Vm(object):
     def _generate_vm_info(
         cls, content, datacenter, vm_folder: Optional[str], vm, vcenter_name: str = None
     ) -> VmResponseSchema:
+        """仮想マシン情報を生成"""
+
         disk_devices = []
         network_devices = []
         for device in vm.config.hardware.device:

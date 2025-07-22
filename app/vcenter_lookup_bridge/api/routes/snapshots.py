@@ -1,4 +1,5 @@
 import os
+import uuid
 from typing import Annotated
 from fastapi import APIRouter, Depends, Path, Query
 from fastapi_cache.decorator import cache
@@ -31,6 +32,7 @@ async def list_vm_snapshots(
     search_params: Annotated[VmSnapshotListSearchSchema, Query()],
     service_instances: object = Depends(Connector.get_service_instances),
 ):
+    requestId = str(uuid.uuid4())
     try:
         vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations()
         snapshots = Snapshot.get_vm_snapshots_from_all_vcenters(
@@ -88,13 +90,17 @@ async def get_vm_snapshots(
     search_params: Annotated[VmSnapshotSearchSchema, Query()],
     service_instances: object = Depends(Connector.get_service_instances),
 ):
+    requestId = str(uuid.uuid4())
     try:
-        Logging.info(f"インスタンスUUID({search_params.vcenter})の仮想マシンが持つスナップショットを取得します。")
+        Logging.info(
+            f"{requestId} インスタンスUUID({search_params.vcenter})の仮想マシンが持つスナップショットを取得します。"
+        )
         vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations()
-        snapshots = Snapshot.get_vm_snapshot_by_instance_uuid(
+        snapshots = Snapshot.get_vm_snapshot_by_instance_uuid_from_all_vcenters(
+            vcenter_name=search_params.vcenter,
             service_instances=service_instances,
             instance_uuid=vm_instance_uuid,
-            vcenter_name=search_params.vcenter,
+            requestId=requestId,
         )
         if len(snapshots) > 0:
             return ApiResponse.create(

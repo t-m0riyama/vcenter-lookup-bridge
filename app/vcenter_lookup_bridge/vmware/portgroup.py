@@ -14,7 +14,7 @@ class Portgroup(object):
 
     # Const
     VLB_MAX_RETRIEVE_VCENTER_OBJECTS_DEFAULT = 1000
-    VLB_MAX_VCENTER_WEB_SERVICE_WORKER_THREADS_DEFAULT = 4
+    VLB_MAX_VCENTER_WEB_SERVICE_WORKER_THREADS_DEFAULT = 10
 
     @classmethod
     def get_portgroups_by_tags_from_all_vcenters(
@@ -26,8 +26,10 @@ class Portgroup(object):
         vcenter_name: Optional[str] = None,
         offset=0,
         max_results=100,
+        requestId: str = None,
     ) -> list[PortgroupResponseSchema]:
-        """全vCenterから仮想マシン一覧を取得"""
+        """全vCenterからポートグループ一覧を取得"""
+
         all_portgroups = []
         offset_vcenter = 0
         max_retrieve_vcenter_objects = int(
@@ -46,7 +48,7 @@ class Portgroup(object):
         if vcenter_name:
             # vCenterを指定した場合、指定したvCenterからポートグループ一覧を取得
             try:
-                portgroups = cls.get_portgroups_by_tags_from_vcenter(
+                portgroups = cls._get_portgroups_by_tags_from_vcenter(
                     vcenter_name=vcenter_name,
                     service_instances=service_instances,
                     configs=configs,
@@ -54,10 +56,11 @@ class Portgroup(object):
                     tags=tags,
                     offset=offset,
                     max_results=max_results,
+                    requestId=requestId,
                 )
                 all_portgroups.extend(portgroups)
             except Exception as e:
-                Logging.error(f"vCenter({vcenter_name})からのポートグループ情報取得に失敗: {e}")
+                Logging.error(f"{requestId} vCenter({vcenter_name})からのポートグループ情報取得に失敗: {e}")
         else:
             # vCenterを指定しない場合、すべてのvCenterからポートグループ一覧を取得
             futures = {}
@@ -66,7 +69,7 @@ class Portgroup(object):
                     # 各vCenterからポートグループ一覧を取得するスレッドを作成
                     for vcenter_name in configs.keys():
                         futures[vcenter_name] = executor.submit(
-                            cls.get_portgroups_by_tags_from_vcenter,
+                            cls._get_portgroups_by_tags_from_vcenter,
                             vcenter_name,
                             service_instances,
                             configs,
@@ -74,12 +77,13 @@ class Portgroup(object):
                             tags,
                             offset_vcenter,
                             max_retrieve_vcenter_objects,
+                            requestId,
                         )
 
                     # 各スレッドの実行結果を回収
                     for vcenter_name in configs.keys():
                         portgroups = futures[vcenter_name].result()
-                        Logging.info(f"vCenter({vcenter_name})からのポートグループ情報取得に成功: {portgroups}")
+                        Logging.info(f"{requestId} vCenter({vcenter_name})からのポートグループ情報取得に成功")
                         all_portgroups.extend(portgroups)
 
                     # オフセットと最大件数の調整
@@ -88,12 +92,12 @@ class Portgroup(object):
                         all_portgroups = all_portgroups[:max_results]
 
                 except Exception as e:
-                    Logging.error(f"vCenter({vcenter_name})からのポートグループ情報取得に失敗: {e}")
+                    Logging.error(f"{requestId} vCenter({vcenter_name})からのポートグループ情報取得に失敗: {e}")
 
         return all_portgroups
 
     @classmethod
-    def get_portgroups_by_tags_from_vcenter(
+    def _get_portgroups_by_tags_from_vcenter(
         cls,
         vcenter_name: str,
         service_instances: dict,
@@ -102,7 +106,10 @@ class Portgroup(object):
         tags: list[str],
         offset: int = 0,
         max_results: int = 100,
+        requestId: str = None,
     ) -> list:
+        """指定したvCenterからポートグループ一覧を取得"""
+
         results = []
         portgroup_count = 0
 
@@ -139,6 +146,11 @@ class Portgroup(object):
                             portgroup_config["tags"] = portgroup_tags[portgroup_name][tag_category]
 
                             for attached_tag in portgroup_tags[portgroup_name][tag_category]:
+                                # すでに結果に追加済みのデータストアであれば、スキップ
+                                if portgroup_name in [result["name"] for result in results]:
+                                    continue
+
+                                # タグが一致していれば、結果に追加
                                 if str(attached_tag) in tags:
                                     results.append(portgroup_config)
                                     portgroup_count += 1
@@ -150,6 +162,8 @@ class Portgroup(object):
         portgroup,
         vcenter_name: str,
     ):
+        """ポートグループ情報を生成"""
+
         if isinstance(portgroup, vim.Network):
             # ポートグループを利用可能なESXiホストの情報を取得
             hosts = []
