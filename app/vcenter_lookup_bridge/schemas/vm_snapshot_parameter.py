@@ -6,6 +6,19 @@ from typing import List
 class VmSnapshotSearchSchema(BaseModel):
     """仮想マシンスナップショットのクエリパラメータのスキーマ"""
 
+    offset: int = Field(
+        description="仮想マシンのスナップショットを取得する際の開始位置を指定します。",
+        default=0,
+        example=0,
+        ge=0,
+    )
+    max_results: int = Field(
+        description="仮想マシンのスナップショットを取得する際の最大件数を指定します。",
+        default=100,
+        example=100,
+        ge=1,
+        le=1000,
+    )
     vcenter: str = Field(
         description="vCenterの名前を指定します。vCenter管理下の仮想マシン一覧を取得します。",
         default=None,

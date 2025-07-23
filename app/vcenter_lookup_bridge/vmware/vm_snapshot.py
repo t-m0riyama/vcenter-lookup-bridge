@@ -8,7 +8,7 @@ from vcenter_lookup_bridge.utils.logging import Logging
 import urllib.parse
 
 
-class Snapshot(object):
+class VmSnapshot(object):
     """スナップショット情報を取得するクラス"""
 
     # Const
@@ -24,8 +24,10 @@ class Snapshot(object):
         vcenter_name: Optional[str] = None,
         offset=0,
         max_results=100,
+        request_id: str = None,
     ) -> list[VmSnapshotResponseSchema]:
         """全vCenterからスナップショット一覧を取得"""
+
         all_snapshots = []
         offset_vcenter = 0
         max_retrieve_vcenter_objects = int(
@@ -52,6 +54,7 @@ class Snapshot(object):
                     offset=offset,
                     max_results=max_results,
                 )
+                Logging.info(f"{request_id} vCenter({vcenter_name})からのスナップショット情報取得に成功")
                 all_snapshots.extend(snapshots)
             except Exception as e:
                 Logging.error(f"vCenter({vcenter_name})からのスナップショット情報取得に失敗: {e}")
@@ -75,6 +78,7 @@ class Snapshot(object):
                     # 各スレッドの実行結果を回収
                     for vcenter_name in configs.keys():
                         snapshots = futures[vcenter_name].result()
+                        Logging.info(f"{request_id} vCenter({vcenter_name})からのスナップショット情報取得に成功")
                         all_snapshots.extend(snapshots)
 
                     # オフセットと最大件数の調整
@@ -83,7 +87,7 @@ class Snapshot(object):
                         all_snapshots = all_snapshots[:max_results]
 
                 except Exception as e:
-                    Logging.error(f"vCenter({vcenter_name})からのVM取得に失敗: {e}")
+                    Logging.error(f"{request_id} vCenter({vcenter_name})からのVM取得に失敗: {e}")
 
         return all_snapshots
 
@@ -96,8 +100,10 @@ class Snapshot(object):
         vm_folders: List[str],
         offset=0,
         max_results=100,
+        request_id: str = None,
     ) -> list[VmSnapshotResponseSchema]:
         """特定のvCenterから仮想マシンフォルダを指定して、仮想マシンのスナップショット一覧を取得"""
+
         results = []
 
         # 指定されたvCenterのService Instanceを取得
@@ -115,7 +121,9 @@ class Snapshot(object):
         for vm_folder in vm_folders:
             folder = search_index.FindByInventoryPath(f"/{datacenter.name}/vm/{base_vm_folder}/{vm_folder}/")
             if folder is None:
-                Logging.info(f"vCenter({vcenter_name})の仮想マシンフォルダ({vm_folder})が見つかりませんでした。")
+                Logging.info(
+                    f"{request_id} vCenter({vcenter_name})に仮想マシンフォルダ({vm_folder})は見つかりませんでした。"
+                )
                 continue
 
             if vm_count >= offset + max_results:
@@ -145,8 +153,10 @@ class Snapshot(object):
         vcenter_name: str,
         service_instances,
         instance_uuid: str,
-        requestId: str = None,
+        request_id: str = None,
     ) -> list[VmSnapshotResponseSchema]:
+        """全vCenterから指定したインスタンスUUIDを持つ仮想マシンのスナップショット情報を取得"""
+
         all_snapshots = []
         max_vcenter_web_service_worker_threads = int(
             os.getenv(
@@ -162,10 +172,10 @@ class Snapshot(object):
                     vcenter_name=vcenter_name,
                     service_instances=service_instances,
                     instance_uuid=instance_uuid,
-                    requestId=requestId,
+                    request_id=request_id,
                 )
                 if snapshots is not None:
-                    all_snapshots.append(snapshots)
+                    all_snapshots.extend(snapshots)
             except HTTPException as e:
                 pass
             except Exception as e:
@@ -182,16 +192,16 @@ class Snapshot(object):
                             vcenter_name,
                             service_instances,
                             instance_uuid,
-                            requestId,
+                            request_id,
                         )
 
                     # 各スレッドの実行結果を回収
                     for vcenter_name in service_instances.keys():
                         snapshots = futures[vcenter_name].result()
                         if snapshots is not None:
-                            all_snapshots.append(snapshots)
+                            all_snapshots.extend(snapshots)
                 except HTTPException as e:
-                    Logging.info(f"{requestId} vCenter({vcenter_name})からのスナップショット情報取得に失敗: {e}")
+                    Logging.info(f"{request_id} vCenter({vcenter_name})からのスナップショット情報取得に失敗: {e}")
                     pass
                 except Exception as e:
                     raise e
@@ -203,12 +213,13 @@ class Snapshot(object):
         vcenter_name: str,
         service_instances: dict,
         instance_uuid: str,
-        requestId: str = None,
+        request_id: str = None,
     ) -> list[VmSnapshotResponseSchema]:
+        """指定したインスタンスUUIDを持つ仮想マシンのスナップショット情報を取得"""
 
         # 指定されたvCenterのService Instanceを取得
         if vcenter_name not in service_instances:
-            raise HTTPException(status_code=404, detail=f"{requestId} vCenter({vcenter_name}) not found")
+            raise HTTPException(status_code=404, detail=f"{request_id} vCenter({vcenter_name}) not found")
 
         content = service_instances[vcenter_name].RetrieveContent()
         datacenter = content.rootFolder.childEntity[0]
@@ -234,9 +245,11 @@ class Snapshot(object):
     @classmethod
     def _generate_vm_snapshot_info(
         cls, datacenter, vm_folder: Optional[str], vm, vcenter_name: str
-    ) -> VmSnapshotListResponseSchema:
+    ) -> list[VmSnapshotResponseSchema]:
+        """指定した仮想マシンのスナップショット情報を生成"""
+
         snapshots = []
-        vm_snapshot_info = []
+        vm_snapshots_info = []
 
         # 仮想マシンのrootスナップショットの有無を確認し、存在する場合は取得
         if hasattr(vm, "snapshot"):
@@ -264,22 +277,21 @@ class Snapshot(object):
             else:
                 has_child = False
 
-            vm_snapshot_info.append(
-                {
-                    "vcenter": vcenter_name,
-                    "datacenter": datacenter.name,
-                    "vmInstanceUuid": vm.summary.config.instanceUuid,
-                    "vmName": vm.summary.config.name,
-                    "vmFolder": vm_folder,
-                    "name": snapshot_name,
-                    "id": snapshot.id,
-                    "parentId": snapshot.parent_id if hasattr(snapshot, "parent_id") else -1,
-                    "description": snapshot.description,
-                    "createTime": create_time,
-                    "hasChild": has_child,
-                }
-            )
-        return vm_snapshot_info
+            snapshot_info = {
+                "vcenter": vcenter_name,
+                "datacenter": datacenter.name,
+                "vmInstanceUuid": vm.summary.config.instanceUuid,
+                "vmName": vm.summary.config.name,
+                "vmFolder": vm_folder,
+                "name": snapshot_name,
+                "id": snapshot.id,
+                "parentId": snapshot.parent_id if hasattr(snapshot, "parent_id") else -1,
+                "description": snapshot.description,
+                "createTime": create_time,
+                "hasChild": has_child,
+            }
+            vm_snapshots_info.append(VmSnapshotResponseSchema(**snapshot_info))
+        return vm_snapshots_info
 
     @staticmethod
     def _get_snapshots_recursively(snapshot_list, parent_id: int = -1):
@@ -290,5 +302,5 @@ class Snapshot(object):
 
             # 子スナップショットが存在する場合、取得する
             if hasattr(snapshot, "childSnapshotList"):
-                snapshots = snapshots + Snapshot._get_snapshots_recursively(snapshot.childSnapshotList, snapshot.id)
+                snapshots = snapshots + VmSnapshot._get_snapshots_recursively(snapshot.childSnapshotList, snapshot.id)
         return snapshots
