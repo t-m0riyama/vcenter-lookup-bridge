@@ -26,6 +26,7 @@ class Tag(object):
     #     )
 
     @classmethod
+    @Logging.func_logger
     def get_all_datastore_tags(cls, config) -> dict:
         client = cls._create_client(config=config)
         cat_dict, tag_dict = cls._generate_all_tag_dict(client=client)
@@ -34,12 +35,14 @@ class Tag(object):
         )
 
     @classmethod
+    @Logging.func_logger
     def get_all_portgroup_tags(cls, config) -> dict:
         client = cls._create_client(config=config)
         cat_dict, tag_dict = cls._generate_all_tag_dict(client=client)
         return cls._generate_object_tag_dict(client=client, cat_dict=cat_dict, tag_dict=tag_dict, object_type="Network")
 
     @classmethod
+    @Logging.func_logger
     def _create_client(cls, config) -> VsphereClient:
         session = requests.session()
         session.verify = not config["ignore_ssl_cert_verify"]
@@ -52,6 +55,7 @@ class Tag(object):
         return client
 
     @classmethod
+    @Logging.func_logger
     def _generate_object_tag_dict(cls, client, cat_dict, tag_dict, object_type) -> dict:
         object_tags = {}
 
@@ -68,6 +72,7 @@ class Tag(object):
         return object_tags
 
     @classmethod
+    @Logging.func_logger
     def _get_object_name_by_object_id(cls, object_type, client, tagged_object) -> str:
         match object_type:
             case "VirtualMachine":
@@ -83,6 +88,7 @@ class Tag(object):
         return object_name
 
     @classmethod
+    @Logging.func_logger
     def _generate_tag_search_object(cls, object_type, client) -> list[dict]:
         match object_type:
             case "VirtualMachine":
@@ -97,6 +103,7 @@ class Tag(object):
         return tag_search_objs
 
     @classmethod
+    @Logging.func_logger
     def _generate_all_tag_dict(cls, client) -> tuple[dict, dict]:
         cat_dict = {}
         tag_dict = {}
@@ -105,6 +112,7 @@ class Tag(object):
         return cat_dict, tag_dict
 
     @classmethod
+    @Logging.func_logger
     def _generate_tag_dict(cls, cat_dict, tag_dict, client) -> None:
         for id in client.tagging.Category.list():
             cat = client.tagging.Category.get(id)

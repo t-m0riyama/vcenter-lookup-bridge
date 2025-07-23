@@ -3,6 +3,7 @@ from typing import Dict, Optional, Literal
 from redis import asyncio as aioredis
 from redis import Redis
 from redis.exceptions import RedisError, ConnectionError, TimeoutError
+from vcenter_lookup_bridge.utils.logging import Logging
 import re
 
 
@@ -48,6 +49,7 @@ class VCenterWSSessionManager:
     VCenterStatus = Literal["alive", "dead"]
 
     @staticmethod
+    @Logging.func_logger
     def validate_vcenter_name(vcenter_name: str) -> None:
         """
         vCenter名の形式を検証します
@@ -64,6 +66,7 @@ class VCenterWSSessionManager:
             raise VCenterWSSessionError("vCenter名は英数字、アンダースコア、ハイフンのみ使用可能です")
 
     @staticmethod
+    @Logging.func_logger
     def initialize() -> Redis:
         """
         Redis接続を初期化します
@@ -90,6 +93,7 @@ class VCenterWSSessionManager:
             raise VCenterWSSessionError(f"Redis接続の初期化に失敗しました: {str(e)}")
 
     @staticmethod
+    @Logging.func_logger
     async def initialize_async() -> Redis:
         """
         Redis接続を初期化します
@@ -117,6 +121,7 @@ class VCenterWSSessionManager:
             raise VCenterWSSessionError(f"Redis接続の初期化に失敗しました: {str(e)}")
 
     @staticmethod
+    @Logging.func_logger
     def set_vcenter_ws_session(
         redis: Redis,
         vcenter_name: str,
@@ -145,6 +150,7 @@ class VCenterWSSessionManager:
             raise VCenterWSSessionError(f"vCenter接続状態の登録に失敗しました: {str(e)}")
 
     @staticmethod
+    @Logging.func_logger
     async def set_vcenter_ws_session_async(
         redis: Redis,
         vcenter_name: str,
@@ -173,6 +179,7 @@ class VCenterWSSessionManager:
             raise VCenterWSSessionError(f"vCenter接続状態の登録に失敗しました: {str(e)}")
 
     @staticmethod
+    @Logging.func_logger
     def get_vcenter_ws_session(redis: Redis, vcenter_name: str) -> Optional[VCenterStatus]:
         """
         vCenterの接続状態を取得します
@@ -195,6 +202,7 @@ class VCenterWSSessionManager:
             raise VCenterWSSessionError(f"vCenter接続状態の取得に失敗しました: {str(e)}")
 
     @staticmethod
+    @Logging.func_logger
     async def get_vcenter_ws_session_async(redis: Redis, vcenter_name: str) -> Optional[VCenterStatus]:
         """
         vCenterの接続状態を取得します
@@ -217,6 +225,7 @@ class VCenterWSSessionManager:
             raise VCenterWSSessionError(f"vCenter接続状態の取得に失敗しました: {str(e)}")
 
     @staticmethod
+    @Logging.func_logger
     def get_all_vcenter_ws_session_informations(
         redis: Redis = None,
     ) -> Dict[str, VCenterStatus]:
@@ -250,6 +259,7 @@ class VCenterWSSessionManager:
             raise VCenterWSSessionError(f"vCenter接続状態の一括取得に失敗しました: {str(e)}")
 
     @staticmethod
+    @Logging.func_logger
     async def get_all_vcenter_ws_session_informations_async(
         redis: Redis,
     ) -> Dict[str, VCenterStatus]:
@@ -281,6 +291,7 @@ class VCenterWSSessionManager:
             raise VCenterWSSessionError(f"vCenter接続状態の一括取得に失敗しました: {str(e)}")
 
     @staticmethod
+    @Logging.func_logger
     def get_or_create_vcenter_ws_session(
         redis: Redis, vcenter_name: str, status: VCenterStatus = VCENTER_STATUS_ALIVE
     ) -> VCenterStatus:
@@ -339,6 +350,7 @@ class VCenterWSSessionManager:
             raise VCenterWSSessionError(f"vCenter接続状態の取得または作成に失敗しました: {str(e)}")
 
     @staticmethod
+    @Logging.func_logger
     async def is_dead_vcenter_ws_session_async(redis: Redis, vcenter_name: str) -> bool:
         """
         指定されたvCenterの接続状態がダウンしているかどうかを確認します
@@ -361,6 +373,7 @@ class VCenterWSSessionManager:
             raise VCenterWSSessionError(f"vCenter接続状態の確認に失敗しました: {str(e)}")
 
     @staticmethod
+    @Logging.func_logger
     def is_dead_vcenter_ws_session(redis: Redis, vcenter_name: str) -> bool:
         """
         指定されたvCenterの接続状態がダウンしているかどうかを確認します

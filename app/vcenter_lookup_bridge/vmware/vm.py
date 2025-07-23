@@ -16,6 +16,7 @@ class Vm(object):
     VLB_MAX_VCENTER_WEB_SERVICE_WORKER_THREADS_DEFAULT = 10
 
     @classmethod
+    @Logging.func_logger
     def get_vms_from_all_vcenters(
         cls,
         service_instances: dict,
@@ -93,6 +94,7 @@ class Vm(object):
         return all_vms
 
     @classmethod
+    @Logging.func_logger
     def _get_vms_by_vm_folders_from_vcenter(
         cls,
         vcenter_name: str,
@@ -150,6 +152,7 @@ class Vm(object):
         return results
 
     @classmethod
+    @Logging.func_logger
     def get_vm_by_instance_uuid_from_all_vcenters(
         cls,
         vcenter_name: str,
@@ -217,6 +220,7 @@ class Vm(object):
         return all_vms
 
     @classmethod
+    @Logging.func_logger
     def _get_vm_by_instance_uuid(
         cls,
         vcenter_name: str,
@@ -256,6 +260,7 @@ class Vm(object):
             return None
 
     @classmethod
+    @Logging.func_logger
     def _count_all_vms(cls, content) -> int:
         root_folder = content.rootFolder
         view_vms = content.viewManager.CreateContainerView(
@@ -264,6 +269,7 @@ class Vm(object):
         return len(view_vms.view)
 
     @classmethod
+    @Logging.func_logger
     def _generate_vm_info(
         cls, content, datacenter, vm_folder: Optional[str], vm, vcenter_name: str = None
     ) -> VmResponseSchema:

@@ -18,6 +18,7 @@ class Datastore(object):
     VLB_MAX_VCENTER_WEB_SERVICE_WORKER_THREADS_DEFAULT = 10
 
     @classmethod
+    @Logging.func_logger
     def get_datastores_by_tags_from_all_vcenters(
         cls,
         service_instances: dict,
@@ -98,6 +99,7 @@ class Datastore(object):
         return all_datastores
 
     @classmethod
+    @Logging.func_logger
     def _get_datastores_by_tags(
         cls,
         vcenter_name: str,
@@ -156,6 +158,7 @@ class Datastore(object):
         return results
 
     @classmethod
+    @Logging.func_logger
     def _generate_datastore_info(cls, datastore, content, vcenter_name: str):
         """データストア情報を生成"""
 

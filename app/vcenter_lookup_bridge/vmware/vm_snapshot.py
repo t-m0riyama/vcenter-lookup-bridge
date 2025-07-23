@@ -16,6 +16,7 @@ class VmSnapshot(object):
     VLB_MAX_VCENTER_WEB_SERVICE_WORKER_THREADS_DEFAULT = 4
 
     @classmethod
+    @Logging.func_logger
     def get_vm_snapshots_from_all_vcenters(
         cls,
         service_instances: dict,
@@ -92,6 +93,7 @@ class VmSnapshot(object):
         return all_snapshots
 
     @classmethod
+    @Logging.func_logger
     def _get_vm_snapshots_by_vm_folders_from_vcenter(
         cls,
         vcenter_name: str,
@@ -148,6 +150,7 @@ class VmSnapshot(object):
         return results
 
     @classmethod
+    @Logging.func_logger
     def get_vm_snapshot_by_instance_uuid_from_all_vcenters(
         cls,
         vcenter_name: str,
@@ -208,6 +211,7 @@ class VmSnapshot(object):
         return all_snapshots
 
     @classmethod
+    @Logging.func_logger
     def _get_vm_snapshot_by_instance_uuid(
         cls,
         vcenter_name: str,
@@ -243,6 +247,7 @@ class VmSnapshot(object):
             return None
 
     @classmethod
+    @Logging.func_logger
     def _generate_vm_snapshot_info(
         cls, datacenter, vm_folder: Optional[str], vm, vcenter_name: str
     ) -> list[VmSnapshotResponseSchema]:
@@ -294,6 +299,7 @@ class VmSnapshot(object):
         return vm_snapshots_info
 
     @staticmethod
+    @Logging.func_logger
     def _get_snapshots_recursively(snapshot_list, parent_id: int = -1):
         snapshots = []
         for snapshot in snapshot_list:

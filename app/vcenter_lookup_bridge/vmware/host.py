@@ -7,6 +7,7 @@ class Host(object):
     """ESXiホスト情報を取得するクラス"""
 
     @classmethod
+    @Logging.func_logger
     def get_host_by_name(cls, content, host_name):
         result = None
         host = Helper.get_object_by_name(content=content, vimtype=[vim.HostSystem], name=host_name)
@@ -20,6 +21,7 @@ class Host(object):
         return result
 
     @classmethod
+    @Logging.func_logger
     def get_host_by_object_key(cls, content, object_key):
         result = None
         host = Helper.get_object_by_object_key(content=content, vimtype=vim.HostSystem, object_key=object_key)
@@ -33,6 +35,7 @@ class Host(object):
         return result
 
     @classmethod
+    @Logging.func_logger
     def _generate_host_info(cls, host):
         host_config = {
             "name": host.name,

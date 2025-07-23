@@ -24,6 +24,7 @@ class Connector(object):
     VLB_VCENTER_HTTP_PROXY_PORT_DEFAULT = 8080
 
     @classmethod
+    @Logging.func_logger
     def _connect_vcenter(cls, config, vcenter_name):
         try:
             vcenter_connect_timeout = int(
@@ -104,10 +105,12 @@ class Connector(object):
         return si
 
     @classmethod
+    @Logging.func_logger
     def _disconnect_vcenter(cls, si):
         Disconnect(si)
 
     @classmethod
+    @Logging.func_logger
     def _connect_vcenter_with_redis(cls):
         redis = VCenterWSSessionManager.initialize()
         VCenterWSSessionManager.set_vcenter_ws_session(
@@ -119,6 +122,7 @@ class Connector(object):
         return status
 
     @classmethod
+    @Logging.func_logger
     def get_service_instances(cls):
         configs = g.vcenter_configurations
         vcenter_connect_retry_interval = int(
@@ -212,6 +216,7 @@ class Connector(object):
         return g.service_instances
 
     @classmethod
+    @Logging.func_logger
     async def get_vmware_content(cls):
         service_instances = Connector.get_service_instances(
             configs=g.vcenter_configurations,

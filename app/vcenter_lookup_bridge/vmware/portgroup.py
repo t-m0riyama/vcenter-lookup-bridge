@@ -17,6 +17,7 @@ class Portgroup(object):
     VLB_MAX_VCENTER_WEB_SERVICE_WORKER_THREADS_DEFAULT = 10
 
     @classmethod
+    @Logging.func_logger
     def get_portgroups_by_tags_from_all_vcenters(
         cls,
         service_instances: dict,
@@ -97,6 +98,7 @@ class Portgroup(object):
         return all_portgroups
 
     @classmethod
+    @Logging.func_logger
     def _get_portgroups_by_tags_from_vcenter(
         cls,
         vcenter_name: str,
@@ -157,6 +159,7 @@ class Portgroup(object):
         return results
 
     @classmethod
+    @Logging.func_logger
     def _generate_portgroup_info(
         cls,
         portgroup,

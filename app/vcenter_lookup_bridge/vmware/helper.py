@@ -6,6 +6,7 @@ class Helper(object):
     """vCenterオブジェクト取得用のヘルパークラス"""
 
     @classmethod
+    @Logging.func_logger
     def get_object_by_name(cls, content, vimtype, name):
         obj = None
         cv = cls._create_container_view(content, vimtype)
@@ -21,6 +22,7 @@ class Helper(object):
         return obj
 
     @classmethod
+    @Logging.func_logger
     def get_object_by_object_key(cls, content, vimtype, object_key):
         obj = None
         cv = cls._create_container_view(content=content, vimtypes=[vimtype])
@@ -48,6 +50,7 @@ class Helper(object):
         return obj
 
     @classmethod
+    @Logging.func_logger
     def _create_container_view(cls, content, vimtypes):
         cv = content.viewManager.CreateContainerView(
             container=content.rootFolder,

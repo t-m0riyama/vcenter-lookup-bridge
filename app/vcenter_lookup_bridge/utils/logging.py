@@ -10,13 +10,12 @@ class Logging(object):
     """ロギングクラス"""
 
     # const
-    LOGGER_NAME = "main"
+    LOGGER_NAME = "uvicorn.app"
     FUNC_LOGGER_ARGS_LENGTH_MAX_DEFAULT = 20
 
     @classmethod
     def init(cls, log_dir, log_file):
         log_level = cls.get_loglevel_from_string(os.getenv("VLB_LOG_LEVEL", "INFO"))
-        # log_level_db = cls.get_loglevel_from_string(os.getenv('VLB_LOG_LEVEL_DB', 'WARNING'))
         log_path = "{}/{}".format(log_dir, log_file)
 
         # ログファイルの変更を検出するハンドラの作成
@@ -29,9 +28,6 @@ class Logging(object):
 
         # アプリケーション共通のログレベルを設定
         cls.get_logger().setLevel(log_level)
-
-        # SQLAlchemy用のログレベルを設定
-        # logging.getLogger('sqlalchemy').setLevel(log_level_db)
 
     @classmethod
     def get_logger(cls):
