@@ -15,7 +15,6 @@ from vcenter_lookup_bridge.utils.config_util import ConfigUtil
 from vcenter_lookup_bridge.utils.constants import Constants as cs
 from vcenter_lookup_bridge.utils.logging import Logging
 from vcenter_lookup_bridge.vmware.connector import Connector
-from vcenter_lookup_bridge.vmware.vcenter_config_manager import VCenterConfigManager
 
 # const
 LOG_DIR_DEFAULT = "./log"
