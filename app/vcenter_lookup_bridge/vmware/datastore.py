@@ -27,7 +27,7 @@ class Datastore(object):
         vcenter_name: Optional[str] = None,
         offset=0,
         max_results=100,
-        requestId: str = None,
+        request_id: str = None,
     ) -> list[DatastoreResponseSchema]:
         """全vCenterからデータストア一覧を取得"""
 
@@ -57,11 +57,11 @@ class Datastore(object):
                     tags=tags,
                     offset=offset,
                     max_results=max_results,
-                    requestId=requestId,
+                    request_id=request_id,
                 )
                 all_datastores.extend(datastores)
             except Exception as e:
-                Logging.error(f"{requestId} vCenter({vcenter_name})からのデータストア情報取得に失敗: {e}")
+                Logging.error(f"{request_id} vCenter({vcenter_name})からのデータストア情報取得に失敗: {e}")
         else:
             # vCenterを指定しない場合、すべてのvCenterからデータストア一覧を取得
             futures = {}
@@ -78,13 +78,13 @@ class Datastore(object):
                             tags,
                             offset_vcenter,
                             max_retrieve_vcenter_objects,
-                            requestId,
+                            request_id,
                         )
 
                     # 各スレッドの実行結果を回収
                     for vcenter_name in configs.keys():
                         datastores = futures[vcenter_name].result()
-                        Logging.info(f"{requestId} vCenter({vcenter_name})からのデータストア情報取得に成功")
+                        Logging.info(f"{request_id} vCenter({vcenter_name})からのデータストア情報取得に成功")
                         all_datastores.extend(datastores)
 
                     # オフセットと最大件数の調整
@@ -93,7 +93,7 @@ class Datastore(object):
                         all_datastores = all_datastores[:max_results]
 
                 except Exception as e:
-                    Logging.error(f"{requestId} vCenter({vcenter_name})からのデータストア情報取得に失敗: {e}")
+                    Logging.error(f"{request_id} vCenter({vcenter_name})からのデータストア情報取得に失敗: {e}")
 
         return all_datastores
 
@@ -107,7 +107,7 @@ class Datastore(object):
         tags: list[str],
         offset: int = 0,
         max_results: int = 100,
-        requestId: str = None,
+        request_id: str = None,
     ) -> list[DatastoreResponseSchema]:
         """指定したvCenterからデータストア一覧を取得"""
 

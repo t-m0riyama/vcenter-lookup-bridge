@@ -32,13 +32,13 @@ class ApiResponse(BaseModel, Generic[T]):
             hasPrevious=False,
         ),
     )
-    vcenterWsSessions: Optional[dict] = Field(
+    vcenter_ws_sessions: Optional[dict] = Field(
         description="vCenterの接続状況",
         default=None,
         example={"vcenter01": "alive", "vcenter02": "dead"},
     )
     timestamp: str = Field(description="レスポンス生成時刻")
-    requestId: Optional[str] = Field(description="リクエストID", default=None)
+    request_id: Optional[str] = Field(description="リクエストID", default=None)
 
     @classmethod
     def create(
@@ -47,17 +47,17 @@ class ApiResponse(BaseModel, Generic[T]):
         success: bool = True,
         message: Optional[str] = None,
         pagination: Optional[PaginationInfo] = None,
-        vcenterWsSessions: Optional[dict] = None,
-        requestId: Optional[str] = None,
+        vcenter_ws_sessions: Optional[dict] = None,
+        request_id: Optional[str] = None,
     ):
         return cls(
             results=results,
             success=success,
             message=message,
             pagination=pagination,
-            vcenterWsSessions=vcenterWsSessions,
+            vcenter_ws_sessions=vcenter_ws_sessions,
             timestamp=datetime.now(UTC).isoformat(),
-            requestId=requestId,
+            request_id=request_id,
         )
 
 
@@ -68,7 +68,7 @@ class ErrorResponse(BaseModel):
     error: dict = Field(description="エラー情報")
     message: str = Field(description="エラーメッセージ")
     timestamp: str = Field(description="エラー発生時刻")
-    requestId: Optional[str] = Field(description="リクエストID", default=None)
+    request_id: Optional[str] = Field(description="リクエストID", default=None)
 
     @classmethod
     def create(
@@ -77,11 +77,11 @@ class ErrorResponse(BaseModel):
         errorType: str,
         message: str,
         details: Optional[dict] = None,
-        requestId: Optional[str] = None,
+        request_id: Optional[str] = None,
     ):
         return cls(
             error={"code": errorCode, "type": errorType, "details": details},
             message=message,
             timestamp=datetime.now(UTC).isoformat(),
-            requestId=requestId,
+            request_id=request_id,
         )

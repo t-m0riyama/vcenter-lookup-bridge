@@ -29,8 +29,9 @@ async def list_vms(
     search_params: Annotated[VmListSearchSchema, Query()],
     service_instances: object = Depends(Connector.get_service_instances),
 ):
-    requestId = str(uuid.uuid4())
+    request_id = str(uuid.uuid4())
     try:
+        Logging.info(f"{request_id} 仮想マシンフォルダ({search_params.vm_folders})の仮想マシンを取得します。")
         vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations()
         vms = Vm.get_vms_from_all_vcenters(
             service_instances=service_instances,
@@ -39,7 +40,7 @@ async def list_vms(
             vcenter_name=search_params.vcenter,
             offset=search_params.offset,
             max_results=search_params.max_results,
-            requestId=requestId,
+            request_id=request_id,
         )
 
         if vms:
@@ -56,8 +57,8 @@ async def list_vms(
                 success=True,
                 message=f"{len(vms)}件の仮想マシンを取得しました。",
                 pagination=pagination,
-                vcenterWsSessions=vcenter_ws_sessions,
-                requestId=requestId,
+                vcenter_ws_sessions=vcenter_ws_sessions,
+                request_id=request_id,
             )
         else:
             # データが見つからない場合の部分成功
@@ -65,8 +66,8 @@ async def list_vms(
                 results=[],
                 success=False,
                 message="指定した仮想マシンフォルダ中に仮想マシンは見つかりませんでした。",
-                vcenterWsSessions=vcenter_ws_sessions,
-                requestId=requestId,
+                vcenter_ws_sessions=vcenter_ws_sessions,
+                request_id=request_id,
             )
     except Exception as e:
         Logging.error(f"仮想マシン情報の一覧を取得中にエラーが発生しました: {e}")
@@ -90,23 +91,23 @@ async def get_vm(
     search_params: Annotated[VmSearchSchema, Query()],
     service_instances: object = Depends(Connector.get_service_instances),
 ):
-    requestId = str(uuid.uuid4())
+    request_id = str(uuid.uuid4())
     try:
-        Logging.info(f"{requestId} インスタンスUUID({search_params.vcenter})の仮想マシンを取得します。")
+        Logging.info(f"{request_id} インスタンスUUID({vm_instance_uuid})の仮想マシンを取得します。")
         vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations()
         vms = Vm.get_vm_by_instance_uuid_from_all_vcenters(
             vcenter_name=search_params.vcenter,
             service_instances=service_instances,
             instance_uuid=vm_instance_uuid,
-            requestId=requestId,
+            request_id=request_id,
         )
         if isinstance(vms, list) and len(vms) > 0:
             return ApiResponse.create(
                 results=vms,
                 success=True,
                 message="仮想マシン情報を取得しました",
-                vcenterWsSessions=vcenter_ws_sessions,
-                requestId=requestId,
+                vcenter_ws_sessions=vcenter_ws_sessions,
+                request_id=request_id,
             )
         else:
             # VMが見つからない場合
@@ -114,9 +115,9 @@ async def get_vm(
                 results=[],
                 success=False,
                 message=f"指定されたインスタンスUUID({vm_instance_uuid})の仮想マシンが見つかりませんでした。",
-                vcenterWsSessions=vcenter_ws_sessions,
-                requestId=requestId,
+                vcenter_ws_sessions=vcenter_ws_sessions,
+                request_id=request_id,
             )
     except Exception as e:
-        Logging.error(f"{requestId} 仮想マシン情報を取得中にエラーが発生しました: {e}")
+        Logging.error(f"{request_id} 仮想マシン情報を取得中にエラーが発生しました: {e}")
         raise e

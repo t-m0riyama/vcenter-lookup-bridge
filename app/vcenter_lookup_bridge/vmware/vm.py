@@ -24,7 +24,7 @@ class Vm(object):
         vcenter_name: Optional[str] = None,
         offset=0,
         max_results=100,
-        requestId: str = None,
+        request_id: str = None,
     ) -> list[VmResponseSchema]:
         """全vCenterから仮想マシン一覧を取得"""
 
@@ -53,7 +53,7 @@ class Vm(object):
                     vm_folders=vm_folders,
                     offset=offset,
                     max_results=max_results,
-                    requestId=requestId,
+                    request_id=request_id,
                 )
                 all_vms.extend(vms)
             except Exception as e:
@@ -73,13 +73,13 @@ class Vm(object):
                             vm_folders,
                             offset_vcenter,
                             max_retrieve_vcenter_objects,
-                            requestId,
+                            request_id,
                         )
 
                     # 各スレッドの実行結果を回収
                     for vcenter_name in configs.keys():
                         vms = futures[vcenter_name].result()
-                        Logging.info(f"{requestId} vCenter({vcenter_name})からの仮想マシン情報取得に成功")
+                        Logging.info(f"{request_id} vCenter({vcenter_name})からの仮想マシン情報取得に成功")
                         all_vms.extend(vms)
 
                     # オフセットと最大件数の調整
@@ -88,7 +88,7 @@ class Vm(object):
                         all_vms = all_vms[:max_results]
 
                 except Exception as e:
-                    Logging.error(f"{requestId} vCenter({vcenter_name})からのVM取得に失敗: {e}")
+                    Logging.error(f"{request_id} vCenter({vcenter_name})からのVM取得に失敗: {e}")
 
         return all_vms
 
@@ -101,7 +101,7 @@ class Vm(object):
         vm_folders: List[str],
         offset=0,
         max_results=100,
-        requestId: str = None,
+        request_id: str = None,
     ) -> list[VmResponseSchema]:
         """特定のvCenterから仮想マシン一覧を取得"""
 
@@ -118,14 +118,12 @@ class Vm(object):
         base_vm_folder = config["base_vm_folder"]
         search_index = content.searchIndex
         vm_count = 0
-        # all_vm_count = cls._count_all_vms(content)
-        # Logging.info(f"{all_vm_count} VMs in vCenter({vcenter_name})")
 
         for vm_folder in vm_folders:
             folder = search_index.FindByInventoryPath(f"/{datacenter.name}/vm/{base_vm_folder}/{vm_folder}/")
             if folder is None:
                 Logging.info(
-                    f"{requestId} vCenter({vcenter_name})の仮想マシンフォルダ({vm_folder})が見つかりませんでした。"
+                    f"{request_id} vCenter({vcenter_name})に仮想マシンフォルダ({vm_folder})は見つかりませんでした。"
                 )
                 continue
 
@@ -157,7 +155,7 @@ class Vm(object):
         vcenter_name: str,
         service_instances: dict,
         instance_uuid: str,
-        requestId: str = None,
+        request_id: str = None,
     ) -> list[VmResponseSchema]:
         """全vCenterから仮想マシン一覧を取得"""
 
@@ -176,11 +174,13 @@ class Vm(object):
                     vcenter_name=vcenter_name,
                     service_instances=service_instances,
                     instance_uuid=instance_uuid,
+                    request_id=request_id,
                 )
                 if vms is not None:
+                    Logging.info(f"{request_id} vCenter({vcenter_name})からの仮想マシン情報取得に成功")
                     all_vms.append(vms)
             except HTTPException as e:
-                Logging.info(f"{requestId} vCenter({vcenter_name})からのVM取得に失敗: {e}")
+                Logging.info(f"{request_id} vCenter({vcenter_name})からのVM取得に失敗: {e}")
                 pass
             except Exception as e:
                 raise e
@@ -196,15 +196,21 @@ class Vm(object):
                             vcenter_name,
                             service_instances,
                             instance_uuid,
+                            request_id,
                         )
 
                     # 各スレッドの実行結果を回収
                     for vcenter_name in service_instances.keys():
                         vms = futures[vcenter_name].result()
                         if vms is not None:
+                            Logging.info(f"{request_id} vCenter({vcenter_name})からの仮想マシン情報取得に成功")
                             all_vms.append(vms)
+                        else:
+                            Logging.info(
+                                f"{request_id} vCenter({vcenter_name})にインスタンスUUID({instance_uuid})を持つ仮想マシンは見つかりませんでした。"
+                            )
                 except HTTPException as e:
-                    Logging.info(f"{requestId} vCenter({vcenter_name})からのVM取得に失敗: {e}")
+                    Logging.info(f"{request_id} vCenter({vcenter_name})からのVM取得に失敗: {e}")
                     pass
                 except Exception as e:
                     raise e
@@ -216,7 +222,7 @@ class Vm(object):
         vcenter_name: str,
         service_instances: dict,
         instance_uuid: str,
-        requestId: str = None,
+        request_id: str = None,
     ) -> VmResponseSchema:
         """インスタンスUUIDとvCenterを指定して、仮想マシン情報を取得"""
 
@@ -244,6 +250,9 @@ class Vm(object):
                 vcenter_name=vcenter_name,
             )
         else:
+            Logging.info(
+                f"{request_id} vCenter({vcenter_name})にインスタンスUUID({instance_uuid})を持つ仮想マシンは見つかりませんでした。"
+            )
             return None
 
     @classmethod

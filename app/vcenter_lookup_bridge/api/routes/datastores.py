@@ -29,8 +29,11 @@ async def list_datastores(
     search_params: Annotated[DatastoreSearchSchema, Query()],
     service_instances: object = Depends(Connector.get_service_instances),
 ):
-    requestId = str(uuid.uuid4())
+    request_id = str(uuid.uuid4())
     try:
+        Logging.info(
+            f"{request_id} タグ({search_params.tag_category}:{search_params.tags})のデータストアを取得します。"
+        )
         vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations()
         datastores = Datastore.get_datastores_by_tags_from_all_vcenters(
             service_instances=service_instances,
@@ -38,7 +41,7 @@ async def list_datastores(
             tag_category=search_params.tag_category,
             tags=search_params.tags,
             vcenter_name=search_params.vcenter,
-            requestId=requestId,
+            request_id=request_id,
         )
         if datastores:
             pagination = PaginationInfo(
@@ -54,8 +57,8 @@ async def list_datastores(
                 success=True,
                 message=f"{len(datastores)}件のデータストア情報を取得しました。",
                 pagination=pagination,
-                vcenterWsSessions=vcenter_ws_sessions,
-                requestId=requestId,
+                vcenter_ws_sessions=vcenter_ws_sessions,
+                request_id=request_id,
             )
         else:
             # データが見つからない場合の部分成功
@@ -63,9 +66,9 @@ async def list_datastores(
                 results=[],
                 success=False,
                 message="指定した条件のデータストア情報は見つかりませんでした。",
-                vcenterWsSessions=vcenter_ws_sessions,
-                requestId=requestId,
+                vcenter_ws_sessions=vcenter_ws_sessions,
+                request_id=request_id,
             )
     except Exception as e:
-        Logging.error(f"ポデータストア情報の一覧を取得中にエラーが発生しました({requestId}): {e}")
+        Logging.error(f"ポデータストア情報の一覧を取得中にエラーが発生しました({request_id}): {e}")
         raise e

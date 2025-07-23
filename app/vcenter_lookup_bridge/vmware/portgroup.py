@@ -26,7 +26,7 @@ class Portgroup(object):
         vcenter_name: Optional[str] = None,
         offset=0,
         max_results=100,
-        requestId: str = None,
+        request_id: str = None,
     ) -> list[PortgroupResponseSchema]:
         """全vCenterからポートグループ一覧を取得"""
 
@@ -56,11 +56,11 @@ class Portgroup(object):
                     tags=tags,
                     offset=offset,
                     max_results=max_results,
-                    requestId=requestId,
+                    request_id=request_id,
                 )
                 all_portgroups.extend(portgroups)
             except Exception as e:
-                Logging.error(f"{requestId} vCenter({vcenter_name})からのポートグループ情報取得に失敗: {e}")
+                Logging.error(f"{request_id} vCenter({vcenter_name})からのポートグループ情報取得に失敗: {e}")
         else:
             # vCenterを指定しない場合、すべてのvCenterからポートグループ一覧を取得
             futures = {}
@@ -77,13 +77,13 @@ class Portgroup(object):
                             tags,
                             offset_vcenter,
                             max_retrieve_vcenter_objects,
-                            requestId,
+                            request_id,
                         )
 
                     # 各スレッドの実行結果を回収
                     for vcenter_name in configs.keys():
                         portgroups = futures[vcenter_name].result()
-                        Logging.info(f"{requestId} vCenter({vcenter_name})からのポートグループ情報取得に成功")
+                        Logging.info(f"{request_id} vCenter({vcenter_name})からのポートグループ情報取得に成功")
                         all_portgroups.extend(portgroups)
 
                     # オフセットと最大件数の調整
@@ -92,7 +92,7 @@ class Portgroup(object):
                         all_portgroups = all_portgroups[:max_results]
 
                 except Exception as e:
-                    Logging.error(f"{requestId} vCenter({vcenter_name})からのポートグループ情報取得に失敗: {e}")
+                    Logging.error(f"{request_id} vCenter({vcenter_name})からのポートグループ情報取得に失敗: {e}")
 
         return all_portgroups
 
@@ -106,7 +106,7 @@ class Portgroup(object):
         tags: list[str],
         offset: int = 0,
         max_results: int = 100,
-        requestId: str = None,
+        request_id: str = None,
     ) -> list:
         """指定したvCenterからポートグループ一覧を取得"""
 
