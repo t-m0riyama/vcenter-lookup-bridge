@@ -3,7 +3,7 @@ from typing import List, Optional
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import HTTPException
 from pyVmomi import vim
-from vcenter_lookup_bridge.schemas.vm_snapshot_parameter import VmSnapshotResponseSchema, VmSnapshotListResponseSchema
+from vcenter_lookup_bridge.schemas.vm_snapshot_parameter import VmSnapshotResponseSchema
 from vcenter_lookup_bridge.utils.logging import Logging
 import urllib.parse
 
