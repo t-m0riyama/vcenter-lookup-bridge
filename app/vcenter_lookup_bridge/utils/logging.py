@@ -38,7 +38,7 @@ class Logging(object):
     def func_logger(cls, func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            if bool(setuptools.distutils.util.strtobool(os.getenv("VLB_FUNC_LOGGER_ENABLED", "True"))):
+            if bool(setuptools.distutils.util.strtobool(os.getenv("VLB_FUNC_LOGGER_ENABLED", "False"))):
                 func_name_str = func.__name__
                 # class/moduleのメソッドである場合は、クラス/モジュール名も出力する
                 if hasattr(func, "__module__"):
