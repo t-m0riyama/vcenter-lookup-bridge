@@ -8,7 +8,6 @@ class VmSearchSchema(BaseModel):
 
     vcenter: str = Field(
         description="vCenterの名前を指定します。",
-        default=None,
         example="vcenter01",
     )
     model_config = {"extra": "forbid"}

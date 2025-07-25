@@ -21,7 +21,6 @@ class VmSnapshotSearchSchema(BaseModel):
     )
     vcenter: str = Field(
         description="vCenterの名前を指定します。vCenter管理下の仮想マシン一覧を取得します。",
-        default=None,
         example="vcenter01",
     )
     model_config = {"extra": "forbid"}
