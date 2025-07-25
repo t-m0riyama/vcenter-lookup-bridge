@@ -214,15 +214,3 @@ class Connector(object):
                             break
                         time.sleep(vcenter_connect_retry_interval)
         return g.service_instances
-
-    @classmethod
-    @Logging.func_logger
-    async def get_vmware_content(cls):
-        service_instances = Connector.get_service_instances(
-            configs=g.vcenter_configurations,
-        )
-
-        # TODO: 複数のvCenterに接続し、Service Instanceを複数利用する場合の処理を実装する
-        # 今回は1つ目のService Instanceのみ利用する
-        config_keys = list(g.vcenter_configurations.keys())
-        return service_instances[config_keys[0]].RetrieveContent()
