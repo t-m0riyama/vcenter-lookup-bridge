@@ -1,5 +1,4 @@
 import os
-import uuid
 
 from typing import Annotated
 from fastapi import APIRouter, Depends, Path, Query
@@ -8,6 +7,7 @@ import vcenter_lookup_bridge.vmware.instances as g
 from vcenter_lookup_bridge.schemas.common import ApiResponse, PaginationInfo
 from vcenter_lookup_bridge.schemas.vm_parameter import VmListSearchSchema, VmListResponseSchema, VmSearchSchema
 from vcenter_lookup_bridge.utils.logging import Logging
+from vcenter_lookup_bridge.utils.request_util import RequestUtil
 from vcenter_lookup_bridge.vmware.connector import Connector
 from vcenter_lookup_bridge.vmware.vcenter_ws_session_managr import VCenterWSSessionManager
 from vcenter_lookup_bridge.vmware.vm import Vm
@@ -29,7 +29,7 @@ async def list_vms(
     search_params: Annotated[VmListSearchSchema, Query()],
     service_instances: object = Depends(Connector.get_service_instances),
 ):
-    request_id = str(uuid.uuid4())
+    request_id = RequestUtil.get_request_id()
     try:
         Logging.info(f"{request_id} 仮想マシンフォルダ({search_params.vm_folders})の仮想マシンを取得します。")
         vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations()
@@ -57,8 +57,8 @@ async def list_vms(
                 success=True,
                 message=f"{len(vms)}件の仮想マシンを取得しました。",
                 pagination=pagination,
-                vcenter_ws_sessions=vcenter_ws_sessions,
-                request_id=request_id,
+                vcenterWsSessions=vcenter_ws_sessions,
+                requestId=request_id,
             )
         else:
             # データが見つからない場合の部分成功
@@ -66,8 +66,8 @@ async def list_vms(
                 results=[],
                 success=False,
                 message="指定した仮想マシンフォルダ中に仮想マシンは見つかりませんでした。",
-                vcenter_ws_sessions=vcenter_ws_sessions,
-                request_id=request_id,
+                vcenterWsSessions=vcenter_ws_sessions,
+                requestId=request_id,
             )
     except Exception as e:
         Logging.error(f"仮想マシン情報の一覧を取得中にエラーが発生しました: {e}")
@@ -91,7 +91,7 @@ async def get_vm(
     search_params: Annotated[VmSearchSchema, Query()],
     service_instances: object = Depends(Connector.get_service_instances),
 ):
-    request_id = str(uuid.uuid4())
+    request_id = RequestUtil.get_request_id()
     try:
         Logging.info(f"{request_id} インスタンスUUID({vm_instance_uuid})の仮想マシンを取得します。")
         vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations()
@@ -106,8 +106,8 @@ async def get_vm(
                 results=vms,
                 success=True,
                 message="仮想マシン情報を取得しました",
-                vcenter_ws_sessions=vcenter_ws_sessions,
-                request_id=request_id,
+                vcenterWsSessions=vcenter_ws_sessions,
+                requestId=request_id,
             )
         else:
             # VMが見つからない場合
@@ -115,8 +115,8 @@ async def get_vm(
                 results=[],
                 success=False,
                 message=f"指定されたインスタンスUUID({vm_instance_uuid})の仮想マシンが見つかりませんでした。",
-                vcenter_ws_sessions=vcenter_ws_sessions,
-                request_id=request_id,
+                vcenterWsSessions=vcenter_ws_sessions,
+                requestId=request_id,
             )
     except Exception as e:
         Logging.error(f"{request_id} 仮想マシン情報を取得中にエラーが発生しました: {e}")
