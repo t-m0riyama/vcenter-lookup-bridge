@@ -9,7 +9,7 @@ class HealthcheckSchema(BaseModel):
         description="サービスのステータスを示します。(ok|ng)",
         example="ok",
     )
-    vcenter_session_status: str | None = Field(
+    vcenter_service_instances: str | None = Field(
         description="vCenterへのセッションのステータスを示します。(ok|ng)", example="ok"
     )
     model_config = {"extra": "forbid"}

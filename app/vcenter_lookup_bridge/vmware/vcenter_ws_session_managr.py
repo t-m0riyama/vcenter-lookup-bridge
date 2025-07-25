@@ -350,6 +350,29 @@ class VCenterWSSessionManager:
             raise VCenterWSSessionError(f"vCenter接続状態の取得または作成に失敗しました: {str(e)}")
 
     @staticmethod
+    async def remove_all_vcenter_ws_sessions_async(redis: Redis) -> VCenterStatus:
+        """
+        全てのダウンマークを削除し、削除後のキーを返します
+
+        Args:
+            redis: Redis接続オブジェクト
+
+        Returns:
+            VCenterStatus: 取得した値または新しく登録した値
+
+        Raises:
+            VCenterWSSessionError: Redis操作に失敗した場合
+        """
+        try:
+            vcenter_keys = await redis.keys(f"{VCenterWSSessionManager.VCENTER_WS_SESSION_PREFIX}*")
+            for vcenter_key in vcenter_keys:
+                await redis.delete(vcenter_key)
+            status = await VCenterWSSessionManager.get_all_vcenter_ws_session_informations_async(redis)
+            return status
+        except (RedisError, ConnectionError, TimeoutError) as e:
+            raise VCenterWSSessionError(f"vCenter接続状態の削除に失敗しました: {str(e)}")
+
+    @staticmethod
     @Logging.func_logger
     async def is_dead_vcenter_ws_session_async(redis: Redis, vcenter_name: str) -> bool:
         """
