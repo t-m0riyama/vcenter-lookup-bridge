@@ -19,8 +19,15 @@ class ApiResponse(BaseModel, Generic[T]):
     """APIレスポンスの標準フォーマット"""
 
     results: T = Field(description="実際のデータ")
-    success: bool = Field(description="処理成功フラグ")
-    message: Optional[str] = Field(description="メッセージ", default=None)
+    success: bool = Field(
+        description="処理成功フラグ (true|false)",
+        example=True,
+    )
+    message: Optional[str] = Field(
+        description="メッセージ",
+        default=None,
+        example="正常に処理が完了しました。",
+    )
     pagination: Optional[PaginationInfo] = Field(
         description="ページネーション情報",
         default=None,
@@ -32,13 +39,20 @@ class ApiResponse(BaseModel, Generic[T]):
             hasPrevious=False,
         ),
     )
-    vcenter_ws_sessions: Optional[dict] = Field(
+    vcenterWsSessions: Optional[dict] = Field(
         description="vCenterの接続状況",
         default=None,
         example={"vcenter01": "alive", "vcenter02": "dead"},
     )
-    timestamp: str = Field(description="レスポンス生成時刻")
-    request_id: Optional[str] = Field(description="リクエストID", default=None)
+    timestamp: str = Field(
+        description="レスポンス生成時刻",
+        example="2025-07-24T10:00:00.000000+09:00",
+    )
+    requestId: Optional[str] = Field(
+        description="リクエストID",
+        default=None,
+        example="9dc4cec3-5fae-4402-a47f-04499cfefad0",
+    )
 
     @classmethod
     def create(
@@ -47,28 +61,42 @@ class ApiResponse(BaseModel, Generic[T]):
         success: bool = True,
         message: Optional[str] = None,
         pagination: Optional[PaginationInfo] = None,
-        vcenter_ws_sessions: Optional[dict] = None,
-        request_id: Optional[str] = None,
+        vcenterWsSessions: Optional[dict] = None,
+        requestId: Optional[str] = None,
     ):
         return cls(
             results=results,
             success=success,
             message=message,
             pagination=pagination,
-            vcenter_ws_sessions=vcenter_ws_sessions,
+            vcenterWsSessions=vcenterWsSessions,
             timestamp=datetime.now(UTC).isoformat(),
-            request_id=request_id,
+            requestId=requestId,
         )
 
 
 class ErrorResponse(BaseModel):
     """エラーレスポンスの標準フォーマット"""
 
-    success: bool = Field(default=False, description="処理成功フラグ")
+    success: bool = Field(
+        description="処理成功フラグ (true|false)",
+        example=True,
+    )
     error: dict = Field(description="エラー情報")
-    message: str = Field(description="エラーメッセージ")
-    timestamp: str = Field(description="エラー発生時刻")
-    request_id: Optional[str] = Field(description="リクエストID", default=None)
+    message: Optional[str] = Field(
+        description="エラーメッセージ",
+        default=None,
+        example="処理中にエラーが発生しました。",
+    )
+    timestamp: str = Field(
+        description="レスポンス生成時刻",
+        example="2025-07-24T10:00:00.000000+09:00",
+    )
+    requestId: Optional[str] = Field(
+        description="リクエストID",
+        default=None,
+        example="9dc4cec3-5fae-4402-a47f-04499cfefad0",
+    )
 
     @classmethod
     def create(
@@ -77,11 +105,11 @@ class ErrorResponse(BaseModel):
         errorType: str,
         message: str,
         details: Optional[dict] = None,
-        request_id: Optional[str] = None,
+        requestId: Optional[str] = None,
     ):
         return cls(
             error={"code": errorCode, "type": errorType, "details": details},
             message=message,
             timestamp=datetime.now(UTC).isoformat(),
-            request_id=request_id,
+            requestId=requestId,
         )
