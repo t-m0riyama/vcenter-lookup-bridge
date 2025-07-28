@@ -18,7 +18,7 @@ from vcenter_lookup_bridge.vmware.vm_snapshot import VmSnapshot
 # const
 CACHE_EXPIRE_SECS_DEFAULT = 60
 
-router = APIRouter(prefix="/snapshots", tags=["snapshots"])
+router = APIRouter(prefix="/vm_snapshots", tags=["vm_snapshots"])
 cache_expire_secs = int(os.getenv("VLB_CACHE_EXPIRE_SECS", CACHE_EXPIRE_SECS_DEFAULT))
 
 
