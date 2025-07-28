@@ -8,6 +8,8 @@ class Helper(object):
     @classmethod
     @Logging.func_logger
     def get_object_by_name(cls, content, vimtype, name):
+        """指定した名前のオブジェクトを取得"""
+
         obj = None
         cv = cls._create_container_view(content, vimtype)
 
@@ -19,11 +21,14 @@ class Helper(object):
             else:
                 obj = child_object
                 break
+        cv.Destroy()
         return obj
 
     @classmethod
     @Logging.func_logger
     def get_object_by_object_key(cls, content, vimtype, object_key):
+        """指定したオブジェクトキーのオブジェクトを取得"""
+
         obj = None
         cv = cls._create_container_view(content=content, vimtypes=[vimtype])
 
@@ -47,11 +52,14 @@ class Helper(object):
             else:
                 obj = child_object
                 break
+        cv.Destroy()
         return obj
 
     @classmethod
     @Logging.func_logger
     def _create_container_view(cls, content, vimtypes):
+        """ContainerViewを作成"""
+
         cv = content.viewManager.CreateContainerView(
             container=content.rootFolder,
             type=vimtypes,
