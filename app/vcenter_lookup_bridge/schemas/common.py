@@ -108,6 +108,7 @@ class ErrorResponse(BaseModel):
         requestId: Optional[str] = None,
     ):
         return cls(
+            success=False,
             error={"code": errorCode, "type": errorType, "details": details},
             message=message,
             timestamp=datetime.now(UTC).isoformat(),
