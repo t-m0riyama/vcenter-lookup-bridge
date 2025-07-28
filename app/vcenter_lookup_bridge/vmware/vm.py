@@ -26,10 +26,11 @@ class Vm(object):
         offset=0,
         max_results=100,
         request_id: str = None,
-    ) -> list[VmResponseSchema]:
+    ) -> tuple[list[VmResponseSchema], int]:
         """全vCenterから仮想マシン一覧を取得"""
 
         all_vms = []
+        total_vm_count = 0
         offset_vcenter = 0
         max_retrieve_vcenter_objects = int(
             os.getenv(
@@ -57,6 +58,7 @@ class Vm(object):
                     request_id=request_id,
                 )
                 all_vms.extend(vms)
+                total_vm_count = len(all_vms)
             except Exception as e:
                 Logging.error(f"vCenter({vcenter_name})からの仮想マシン情報取得に失敗: {e}")
         else:
@@ -83,6 +85,9 @@ class Vm(object):
                         Logging.info(f"{request_id} vCenter({vcenter_name})からの仮想マシン情報取得に成功")
                         all_vms.extend(vms)
 
+                    # 全仮想マシン数を取得
+                    total_vm_count = len(all_vms)
+
                     # オフセットと最大件数の調整
                     all_vms = all_vms[offset:]
                     if len(all_vms) > max_results:
@@ -91,7 +96,7 @@ class Vm(object):
                 except Exception as e:
                     Logging.error(f"{request_id} vCenter({vcenter_name})からのVM取得に失敗: {e}")
 
-        return all_vms
+        return all_vms, total_vm_count
 
     @classmethod
     @Logging.func_logger

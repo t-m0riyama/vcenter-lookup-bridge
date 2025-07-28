@@ -26,10 +26,11 @@ class VmFolder(object):
         offset=0,
         max_results=100,
         request_id: str = None,
-    ) -> list[VmFolderResponseSchema]:
+    ) -> tuple[list[VmFolderResponseSchema], int]:
         """全vCenterから仮想マシンフォルダ一覧を取得"""
 
         all_vm_folders = []
+        total_vm_folder_count = 0
         max_vcenter_web_service_worker_threads = int(
             os.getenv(
                 "VLB_MAX_VCENTER_WEB_SERVICE_WORKER_THREADS",
@@ -49,6 +50,7 @@ class VmFolder(object):
                 )
                 Logging.info(f"{request_id} vCenter({vcenter_name})からの仮想マシンフォルダ情報取得に成功")
                 all_vm_folders.extend(folders)
+                total_vm_folder_count = len(all_vm_folders)
             except Exception as e:
                 Logging.error(f"vCenter({vcenter_name})からの仮想マシンフォルダ情報取得に失敗: {e}")
         else:
@@ -73,6 +75,9 @@ class VmFolder(object):
                         Logging.info(f"{request_id} vCenter({vcenter_name})からの仮想マシンフォルダ情報取得に成功")
                         all_vm_folders.extend(folders)
 
+                    # 全仮想マシンフォルダ数を取得
+                    total_vm_folder_count = len(all_vm_folders)
+
                     # オフセットと最大件数の調整
                     all_vm_folders = all_vm_folders[offset:]
                     if len(all_vm_folders) > max_results:
@@ -81,7 +86,7 @@ class VmFolder(object):
                 except Exception as e:
                     Logging.error(f"{request_id} vCenter({vcenter_name})からの仮想マシンフォルダ取得に失敗: {e}")
 
-        return all_vm_folders
+        return all_vm_folders, total_vm_folder_count
 
     @classmethod
     @Logging.func_logger

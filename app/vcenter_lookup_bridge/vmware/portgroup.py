@@ -28,10 +28,11 @@ class Portgroup(object):
         offset=0,
         max_results=100,
         request_id: str = None,
-    ) -> list[PortgroupResponseSchema]:
+    ) -> tuple[list[PortgroupResponseSchema], int]:
         """全vCenterからポートグループ一覧を取得"""
 
         all_portgroups = []
+        total_portgroup_count = 0
         offset_vcenter = 0
         max_retrieve_vcenter_objects = int(
             os.getenv(
@@ -60,6 +61,7 @@ class Portgroup(object):
                     request_id=request_id,
                 )
                 all_portgroups.extend(portgroups)
+                total_portgroup_count = len(all_portgroups)
             except Exception as e:
                 Logging.error(f"{request_id} vCenter({vcenter_name})からのポートグループ情報取得に失敗: {e}")
         else:
@@ -87,6 +89,9 @@ class Portgroup(object):
                         Logging.info(f"{request_id} vCenter({vcenter_name})からのポートグループ情報取得に成功")
                         all_portgroups.extend(portgroups)
 
+                    # 全ポートグループ数を取得
+                    total_portgroup_count = len(all_portgroups)
+
                     # オフセットと最大件数の調整
                     all_portgroups = all_portgroups[offset:]
                     if len(all_portgroups) > max_results:
@@ -95,7 +100,7 @@ class Portgroup(object):
                 except Exception as e:
                     Logging.error(f"{request_id} vCenter({vcenter_name})からのポートグループ情報取得に失敗: {e}")
 
-        return all_portgroups
+        return all_portgroups, total_portgroup_count
 
     @classmethod
     @Logging.func_logger

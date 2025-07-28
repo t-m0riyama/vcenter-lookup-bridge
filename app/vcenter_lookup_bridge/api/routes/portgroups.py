@@ -35,7 +35,7 @@ async def list_portgroups(
             f"{request_id} タグ({search_params.tag_category}:{search_params.tags})のポートグループを取得します。"
         )
         vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations()
-        portgroups = Portgroup.get_portgroups_by_tags_from_all_vcenters(
+        portgroups, total_portgroup_count = Portgroup.get_portgroups_by_tags_from_all_vcenters(
             service_instances=service_instances,
             configs=g.vcenter_configurations,
             tag_category=search_params.tag_category,
@@ -46,7 +46,7 @@ async def list_portgroups(
 
         if portgroups:
             pagination = PaginationInfo(
-                totalCount=len(portgroups),
+                totalCount=total_portgroup_count,
                 offset=search_params.offset,
                 limit=search_params.max_results,
                 hasNext=len(portgroups) == search_params.max_results,

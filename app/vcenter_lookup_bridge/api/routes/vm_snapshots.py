@@ -38,7 +38,7 @@ async def list_vm_snapshots(
             f"{request_id} 仮想マシンフォルダ({search_params.vm_folders})の仮想マシンが持つスナップショットを取得します。"
         )
         vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations()
-        snapshots = VmSnapshot.get_vm_snapshots_from_all_vcenters(
+        snapshots, total_snapshot_count = VmSnapshot.get_vm_snapshots_from_all_vcenters(
             service_instances=service_instances,
             configs=g.vcenter_configurations,
             vm_folders=search_params.vm_folders,
@@ -50,7 +50,7 @@ async def list_vm_snapshots(
 
         if snapshots:
             pagination = PaginationInfo(
-                totalCount=len(snapshots),
+                totalCount=total_snapshot_count,
                 offset=search_params.offset,
                 limit=search_params.max_results,
                 hasNext=len(snapshots) == search_params.max_results,

@@ -36,7 +36,7 @@ async def list_vm_folders(
     try:
         Logging.info(f"{request_id} 仮想マシンフォルダを取得します。")
         vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations()
-        vm_folders = VmFolder.get_vm_folders_from_all_vcenters(
+        vm_folders, total_vm_folder_count = VmFolder.get_vm_folders_from_all_vcenters(
             service_instances=service_instances,
             configs=g.vcenter_configurations,
             vm_folders=search_params.vm_folders,
@@ -48,7 +48,7 @@ async def list_vm_folders(
 
         if vm_folders:
             pagination = PaginationInfo(
-                totalCount=len(vm_folders),
+                totalCount=total_vm_folder_count,
                 offset=search_params.offset,
                 limit=search_params.max_results,
                 hasNext=len(vm_folders) == search_params.max_results,

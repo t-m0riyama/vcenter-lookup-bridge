@@ -33,7 +33,7 @@ async def list_vms(
     try:
         Logging.info(f"{request_id} 仮想マシンフォルダ({search_params.vm_folders})の仮想マシンを取得します。")
         vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations()
-        vms = Vm.get_vms_from_all_vcenters(
+        vms, total_vm_count = Vm.get_vms_from_all_vcenters(
             service_instances=service_instances,
             configs=g.vcenter_configurations,
             vm_folders=search_params.vm_folders,
@@ -45,7 +45,7 @@ async def list_vms(
 
         if vms:
             pagination = PaginationInfo(
-                totalCount=len(vms),
+                totalCount=total_vm_count,
                 offset=search_params.offset,
                 limit=search_params.max_results,
                 hasNext=len(vms) == search_params.max_results,

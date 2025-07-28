@@ -35,7 +35,7 @@ async def list_datastores(
             f"{request_id} タグ({search_params.tag_category}:{search_params.tags})のデータストアを取得します。"
         )
         vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations()
-        datastores = Datastore.get_datastores_by_tags_from_all_vcenters(
+        datastores, total_datastore_count = Datastore.get_datastores_by_tags_from_all_vcenters(
             service_instances=service_instances,
             configs=g.vcenter_configurations,
             tag_category=search_params.tag_category,
@@ -45,7 +45,7 @@ async def list_datastores(
         )
         if datastores:
             pagination = PaginationInfo(
-                totalCount=len(datastores),
+                totalCount=total_datastore_count,
                 offset=search_params.offset,
                 limit=search_params.max_results,
                 hasNext=len(datastores) == search_params.max_results,

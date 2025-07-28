@@ -29,10 +29,11 @@ class Datastore(object):
         offset=0,
         max_results=100,
         request_id: str = None,
-    ) -> list[DatastoreResponseSchema]:
+    ) -> tuple[list[DatastoreResponseSchema], int]:
         """全vCenterからデータストア一覧を取得"""
 
         all_datastores = []
+        total_datastore_count = 0
         offset_vcenter = 0
         max_retrieve_vcenter_objects = int(
             os.getenv(
@@ -61,6 +62,7 @@ class Datastore(object):
                     request_id=request_id,
                 )
                 all_datastores.extend(datastores)
+                total_datastore_count = len(all_datastores)
             except Exception as e:
                 Logging.error(f"{request_id} vCenter({vcenter_name})からのデータストア情報取得に失敗: {e}")
         else:
@@ -88,6 +90,9 @@ class Datastore(object):
                         Logging.info(f"{request_id} vCenter({vcenter_name})からのデータストア情報取得に成功")
                         all_datastores.extend(datastores)
 
+                    # 全データストア数を取得
+                    total_datastore_count = len(all_datastores)
+
                     # オフセットと最大件数の調整
                     all_datastores = all_datastores[offset:]
                     if len(all_datastores) > max_results:
@@ -96,7 +101,7 @@ class Datastore(object):
                 except Exception as e:
                     Logging.error(f"{request_id} vCenter({vcenter_name})からのデータストア情報取得に失敗: {e}")
 
-        return all_datastores
+        return all_datastores, total_datastore_count
 
     @classmethod
     @Logging.func_logger

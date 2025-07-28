@@ -26,10 +26,11 @@ class VmSnapshot(object):
         offset=0,
         max_results=100,
         request_id: str = None,
-    ) -> list[VmSnapshotResponseSchema]:
+    ) -> tuple[list[VmSnapshotResponseSchema], int]:
         """全vCenterからスナップショット一覧を取得"""
 
         all_snapshots = []
+        total_snapshot_count = 0
         offset_vcenter = 0
         max_retrieve_vcenter_objects = int(
             os.getenv(
@@ -57,6 +58,7 @@ class VmSnapshot(object):
                 )
                 Logging.info(f"{request_id} vCenter({vcenter_name})からのスナップショット情報取得に成功")
                 all_snapshots.extend(snapshots)
+                total_snapshot_count = len(all_snapshots)
             except Exception as e:
                 Logging.error(f"vCenter({vcenter_name})からのスナップショット情報取得に失敗: {e}")
         else:
@@ -82,6 +84,9 @@ class VmSnapshot(object):
                         Logging.info(f"{request_id} vCenter({vcenter_name})からのスナップショット情報取得に成功")
                         all_snapshots.extend(snapshots)
 
+                    # 全スナップショット数を取得
+                    total_snapshot_count = len(all_snapshots)
+
                     # オフセットと最大件数の調整
                     all_snapshots = all_snapshots[offset:]
                     if len(all_snapshots) > max_results:
@@ -90,7 +95,7 @@ class VmSnapshot(object):
                 except Exception as e:
                     Logging.error(f"{request_id} vCenter({vcenter_name})からのVM取得に失敗: {e}")
 
-        return all_snapshots
+        return all_snapshots, total_snapshot_count
 
     @classmethod
     @Logging.func_logger
