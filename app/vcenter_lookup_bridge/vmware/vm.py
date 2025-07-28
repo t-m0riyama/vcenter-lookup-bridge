@@ -277,37 +277,59 @@ class Vm(object):
 
         disk_devices = []
         network_devices = []
-        for device in vm.config.hardware.device:
-            if isinstance(device, vim.vm.device.VirtualDisk):
-                disk_devices.append(
-                    {
-                        "label": device.deviceInfo.label,
-                        "datastore": device.backing.datastore.name,
-                        "sizeGB": int(device.capacityInKB / 1024**2),
-                    }
-                )
-            elif isinstance(device, vim.vm.device.VirtualVmxnet3):
-                if isinstance(
-                    device.backing,
-                    vim.vm.device.VirtualEthernetCard.DistributedVirtualPortBackingInfo,
-                ):
-                    portgroup_name = Helper.get_object_by_object_key(
-                        content=content,
-                        vimtype=vim.dvs.DistributedVirtualPortgroup,
-                        object_key=device.backing.port.portgroupKey,
-                    )
-                else:
-                    portgroup_name = device.backing.deviceName
 
-                network_devices.append(
-                    {
-                        "label": device.deviceInfo.label,
-                        "macAddress": device.macAddress,
-                        "portgroup": portgroup_name,
-                        "connected": device.connectable.connected,
-                        "startConnected": device.connectable.startConnected,
-                    }
-                )
+        if hasattr(vm, "config"):
+            # シミュレーター以外の仮想マシンの場合、仮想ディスクとポートグループを追加
+            for device in vm.config.hardware.device:
+                if isinstance(device, vim.vm.device.VirtualDisk):
+                    disk_devices.append(
+                        {
+                            "label": device.deviceInfo.label,
+                            "datastore": device.backing.datastore.name,
+                            "sizeGB": int(device.capacityInKB / 1024**2),
+                        }
+                    )
+                elif isinstance(device, vim.vm.device.VirtualVmxnet3):
+                    if isinstance(
+                        device.backing,
+                        vim.vm.device.VirtualEthernetCard.DistributedVirtualPortBackingInfo,
+                    ):
+                        portgroup_name = Helper.get_object_by_object_key(
+                            content=content,
+                            vimtype=vim.dvs.DistributedVirtualPortgroup,
+                            object_key=device.backing.port.portgroupKey,
+                        )
+                    else:
+                        portgroup_name = device.backing.deviceName
+
+                    network_devices.append(
+                        {
+                            "label": device.deviceInfo.label,
+                            "macAddress": device.macAddress,
+                            "portgroup": portgroup_name,
+                            "connected": device.connectable.connected,
+                            "startConnected": device.connectable.startConnected,
+                        }
+                    )
+        else:
+            # VCSIMシミュレータの仮想マシンの場合、仮想ディスクとポートグループにダミーデータを追加
+            disk_devices.append(
+                {
+                    "label": "VCSIM Simulator Label",
+                    "datastore": "VCSIM Simulator Datastore",
+                    "sizeGB": 100,
+                }
+            )
+            portgroup_name = "VCSIM Simulator PortGroup"
+            network_devices.append(
+                {
+                    "label": "VCSIM Simulator Label",
+                    "macAddress": "00:11:22:33:44:55",
+                    "portgroup": portgroup_name,
+                    "connected": True,
+                    "startConnected": True,
+                }
+            )
 
         vm_info = {
             "vcenter": vcenter_name,
