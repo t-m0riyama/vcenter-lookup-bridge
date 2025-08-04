@@ -336,13 +336,14 @@ class Vm(object):
                 }
             )
 
+        # ゲストOSの情報を取得できない場合は、vm.guestの属性についてNoneを返す
         vm_info = {
             "vcenter": vcenter_name,
             "datacenter": datacenter.name,
             "cluster": vm.summary.runtime.host.parent.name,
             "esxiHostname": vm.summary.runtime.host.name,
-            "hostname": vm.guest.hostName,
-            "ipAddress": vm.guest.ipAddress,
+            "hostname": vm.guest.hostName if hasattr(vm, "guest") else None,
+            "ipAddress": vm.guest.ipAddress if hasattr(vm, "guest") else None,
             "vmFolder": vm_folder,
             "powerState": vm.summary.runtime.powerState,
             "diskDevices": disk_devices,
