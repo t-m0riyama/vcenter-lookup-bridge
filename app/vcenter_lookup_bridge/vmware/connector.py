@@ -111,18 +111,6 @@ class Connector(object):
 
     @classmethod
     @Logging.func_logger
-    def _connect_vcenter_with_redis(cls):
-        redis = VCenterWSSessionManager.initialize()
-        VCenterWSSessionManager.set_vcenter_ws_session(
-            redis=redis,
-            vcenter_name="vcenter8-01",
-            status=VCenterWSSessionManager.VCENTER_STATUS_ALIVE,
-        )
-        status = VCenterWSSessionManager.get_vcenter_ws_session(redis=redis, vcenter_name="vcenter8-01")
-        return status
-
-    @classmethod
-    @Logging.func_logger
     def get_service_instances(cls):
         configs = g.vcenter_configurations
         vcenter_connect_retry_interval = int(
