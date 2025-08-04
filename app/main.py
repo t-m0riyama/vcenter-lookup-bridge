@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 import vcenter_lookup_bridge.vmware.instances as g
 from fastapi import FastAPI, Request
+from fastapi.routing import APIRoute
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from redis import asyncio as aioredis
@@ -70,6 +71,17 @@ def init_redis_cache(cache_host, cache_port):
     return redis
 
 
+def use_route_names_as_operation_ids(app: FastAPI) -> None:
+    """
+    operation_idを簡素化して、生成されるAPIクライアントがよりシンプルな関数名を持つようにします。
+
+    すべてのルートが追加された後にのみ呼び出される必要があります。
+    """
+    for route in app.routes:
+        if isinstance(route, APIRoute):
+            route.operation_id = route.name  # in this case, 'read_items'
+
+
 root_path = os.getenv("VLB_ROOT_PATH", VLB_ROOT_PATH_DEFAULT)
 app = FastAPI(
     title="vCenter Lookup Bridge API",
@@ -80,6 +92,10 @@ app = FastAPI(
     root_path=f"{root_path}/api/v1",
 )
 app.include_router(api_router)
+
+# ルート名をoperation_idとして使用する
+# https://fastapi.tiangolo.com/ja/advanced/path-operation-advanced-configuration/#path-operation-operationid
+use_route_names_as_operation_ids(app)
 
 # Initialize Logging
 log_dir = os.getenv("VLB_LOG_DIR", LOG_DIR_DEFAULT)
