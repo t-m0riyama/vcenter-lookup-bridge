@@ -34,7 +34,9 @@ async def list_datastores(
         Logging.info(
             f"{request_id} タグ({search_params.tag_category}:{search_params.tags})のデータストアを取得します。"
         )
-        vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations()
+        vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations(
+            configs=g.vcenter_configurations,
+        )
         datastores, total_datastore_count = Datastore.get_datastores_by_tags_from_all_vcenters(
             service_instances=service_instances,
             configs=g.vcenter_configurations,

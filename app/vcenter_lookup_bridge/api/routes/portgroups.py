@@ -34,7 +34,9 @@ async def list_portgroups(
         Logging.info(
             f"{request_id} タグ({search_params.tag_category}:{search_params.tags})のポートグループを取得します。"
         )
-        vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations()
+        vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations(
+            configs=g.vcenter_configurations,
+        )
         portgroups, total_portgroup_count = Portgroup.get_portgroups_by_tags_from_all_vcenters(
             service_instances=service_instances,
             configs=g.vcenter_configurations,

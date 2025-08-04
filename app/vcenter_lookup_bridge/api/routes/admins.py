@@ -5,6 +5,7 @@ from vcenter_lookup_bridge.utils.logging import Logging
 from vcenter_lookup_bridge.utils.request_util import RequestUtil
 from vcenter_lookup_bridge.schemas.admin_parameter import AdminResponseSchema
 from vcenter_lookup_bridge.vmware.vcenter_ws_session_managr import VCenterWSSessionManager
+import vcenter_lookup_bridge.vmware.instances as g
 
 router = APIRouter(prefix="/admins", tags=["admins"])
 
@@ -18,7 +19,9 @@ async def flush_caches():
     request_id = RequestUtil.get_request_id()
     try:
         Logging.info(f"{request_id} キャッシュをクリアします。")
-        vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations()
+        vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations(
+            configs=g.vcenter_configurations,
+        )
         await FastAPICache.clear(key="*")
 
         return ApiResponse.create(
@@ -45,7 +48,9 @@ async def reset_ws_session():
 
         # Web Service APIの接続状態（ダウンマーク）をクリア
         redis = await VCenterWSSessionManager.initialize_async()
-        vcenter_ws_sessions = await VCenterWSSessionManager.remove_all_vcenter_ws_sessions_async(redis)
+        vcenter_ws_sessions = await VCenterWSSessionManager.remove_all_vcenter_ws_sessions_async(
+            redis=redis, configs=g.vcenter_configurations
+        )
 
         return ApiResponse.create(
             results=[],

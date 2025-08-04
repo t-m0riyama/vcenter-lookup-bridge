@@ -32,7 +32,9 @@ async def list_vms(
     request_id = RequestUtil.get_request_id()
     try:
         Logging.info(f"{request_id} 仮想マシンフォルダ({search_params.vm_folders})の仮想マシンを取得します。")
-        vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations()
+        vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations(
+            configs=g.vcenter_configurations,
+        )
         vms, total_vm_count = Vm.get_vms_from_all_vcenters(
             service_instances=service_instances,
             configs=g.vcenter_configurations,
@@ -94,7 +96,9 @@ async def get_vm(
     request_id = RequestUtil.get_request_id()
     try:
         Logging.info(f"{request_id} インスタンスUUID({vm_instance_uuid})の仮想マシンを取得します。")
-        vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations()
+        vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations(
+            configs=g.vcenter_configurations,
+        )
         vms = Vm.get_vm_by_instance_uuid_from_all_vcenters(
             vcenter_name=search_params.vcenter,
             service_instances=service_instances,

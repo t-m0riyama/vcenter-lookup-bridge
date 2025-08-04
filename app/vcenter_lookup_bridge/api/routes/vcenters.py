@@ -24,8 +24,10 @@ async def list_vcenters(
     request_id = RequestUtil.get_request_id()
     try:
         Logging.info(f"{request_id} vCenter一覧を取得します。")
-        vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations()
         configs = g.vcenter_configurations
+        vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations(
+            configs=configs,
+        )
 
         vcenters = VCenter.get_all_vcenters(
             configs=configs,

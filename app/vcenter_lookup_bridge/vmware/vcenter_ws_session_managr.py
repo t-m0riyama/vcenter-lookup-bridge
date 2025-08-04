@@ -42,6 +42,7 @@ class VCenterWSSessionManager:
     VCENTER_WS_SESSION_EXPIRE_SEC = 120
     VCENTER_STATUS_ALIVE = "alive"
     VCENTER_STATUS_DEAD = "dead"
+    VCENTER_STATUS_UNKNOWN = "unknown"
     VCENTER_NAME_PATTERN = r"^[a-zA-Z0-9_-]+$"
     REDIS_TIMEOUT = 5
 
@@ -138,16 +139,13 @@ class VCenterWSSessionManager:
             status: 接続状態（"alive"または"dead"）
             not_exist: 指定したvCenterの名前が未登録の場合のみ、登録する（True）。登録状況に関わらず、登録する（False）
             expire_seconds: 有効期限（秒）
-
-        Raises:
-            VCenterWSSessionError: Redis操作に失敗した場合、またはvCenter名が不正な場合
         """
         try:
             VCenterWSSessionManager.validate_vcenter_name(vcenter_name)
             key = f"{VCenterWSSessionManager.VCENTER_WS_SESSION_PREFIX}{vcenter_name}"
             redis.set(key, status, nx=not_exist, ex=expire_seconds)
         except (RedisError, ConnectionError, TimeoutError) as e:
-            raise VCenterWSSessionError(f"vCenter接続状態の登録に失敗しました: {str(e)}")
+            Logging.error(f"vCenter接続状態の登録に失敗しました: {str(e)}")
 
     @staticmethod
     @Logging.func_logger
@@ -167,16 +165,13 @@ class VCenterWSSessionManager:
             status: 接続状態（"alive"または"dead"）
             not_exist: 指定したvCenterの名前が未登録の場合のみ、登録する（True）。登録状況に関わらず、登録する（False）
             expire_seconds: 有効期限（秒）
-
-        Raises:
-            VCenterWSSessionError: Redis操作に失敗した場合、またはvCenter名が不正な場合
         """
         try:
             VCenterWSSessionManager.validate_vcenter_name(vcenter_name)
             key = f"{VCenterWSSessionManager.VCENTER_WS_SESSION_PREFIX}{vcenter_name}"
             await redis.set(key, status, nx=not_exist, ex=expire_seconds)
         except (RedisError, ConnectionError, TimeoutError) as e:
-            raise VCenterWSSessionError(f"vCenter接続状態の登録に失敗しました: {str(e)}")
+            Logging.error(f"vCenter接続状態の登録に失敗しました: {str(e)}")
 
     @staticmethod
     @Logging.func_logger
@@ -227,6 +222,7 @@ class VCenterWSSessionManager:
     @staticmethod
     @Logging.func_logger
     def get_all_vcenter_ws_session_informations(
+        configs: dict,
         redis: Redis = None,
     ) -> Dict[str, VCenterStatus]:
         """
@@ -241,27 +237,51 @@ class VCenterWSSessionManager:
         Raises:
             VCenterWSSessionError: Redis操作に失敗した場合
         """
-        try:
-            if redis is None:
+        if redis is None:
+            try:
                 redis = VCenterWSSessionManager.initialize()
+            except Exception as e:
+                Logging.error(f"vCenter接続状態の一括取得に失敗しました: {str(e)}")
+                return VCenterWSSessionManager.generate_all_vcenter_ws_session_informations_unknown(configs)
+
+        try:
             vcenter_keys = redis.keys(f"{VCenterWSSessionManager.VCENTER_WS_SESSION_PREFIX}*")
             vcenter_ws_sessions = {}
             for vcenter_key in vcenter_keys:
-                try:
-                    vcenter_name = vcenter_key.decode("utf-8").split(":")[1]
-                    status = redis.get(vcenter_key)
-                    if status:
-                        vcenter_ws_sessions[vcenter_name] = status.decode("utf-8")
-                except (IndexError, UnicodeDecodeError):
-                    continue
-            return vcenter_ws_sessions
-        except (RedisError, ConnectionError, TimeoutError) as e:
-            raise VCenterWSSessionError(f"vCenter接続状態の一括取得に失敗しました: {str(e)}")
+                vcenter_name = vcenter_key.decode("utf-8").split(":")[1]
+                status = redis.get(vcenter_key)
+                if status:
+                    vcenter_ws_sessions[vcenter_name] = status.decode("utf-8")
+        except Exception as e:
+            Logging.error(f"vCenter接続状態の一括取得に失敗しました: {str(e)}")
+            return VCenterWSSessionManager.generate_all_vcenter_ws_session_informations_unknown(configs)
+        return vcenter_ws_sessions
+
+    @staticmethod
+    @Logging.func_logger
+    def generate_all_vcenter_ws_session_informations_unknown(
+        configs: dict,
+    ) -> Dict[str, VCenterStatus]:
+        """
+        全てのvCenter接続状態を取得します
+
+        Args:
+            configs: vCenterの設定情報
+
+        Returns:
+            Dict[str, VCenterStatus]: vCenter名と接続状態の辞書
+
+        """
+        vcenter_ws_sessions = {}
+        for vcenter_name in configs.keys():
+            vcenter_ws_sessions[vcenter_name] = VCenterWSSessionManager.VCENTER_STATUS_UNKNOWN
+        return vcenter_ws_sessions
 
     @staticmethod
     @Logging.func_logger
     async def get_all_vcenter_ws_session_informations_async(
         redis: Redis,
+        configs: dict,
     ) -> Dict[str, VCenterStatus]:
         """
         全てのvCenter接続状態を取得します
@@ -287,8 +307,9 @@ class VCenterWSSessionManager:
                 except (IndexError, UnicodeDecodeError):
                     continue
             return vcenter_ws_sessions
-        except (RedisError, ConnectionError, TimeoutError) as e:
-            raise VCenterWSSessionError(f"vCenter接続状態の一括取得に失敗しました: {str(e)}")
+        except Exception as e:
+            Logging.error(f"vCenter接続状態の一括取得に失敗しました: {str(e)}")
+            return VCenterWSSessionManager.generate_all_vcenter_ws_session_informations_unknown(configs)
 
     @staticmethod
     @Logging.func_logger
@@ -305,9 +326,6 @@ class VCenterWSSessionManager:
 
         Returns:
             VCenterStatus: 取得した値または新しく登録した値
-
-        Raises:
-            VCenterWSSessionError: Redis操作に失敗した場合、またはvCenter名が不正な場合
         """
         try:
             VCenterWSSessionManager.validate_vcenter_name(vcenter_name)
@@ -318,9 +336,11 @@ class VCenterWSSessionManager:
                 return status_updated
             return status_current
         except (RedisError, ConnectionError, TimeoutError) as e:
-            raise VCenterWSSessionError(f"vCenter接続状態の取得または作成に失敗しました: {str(e)}")
+            Logging.error(f"vCenter接続状態の取得または作成に失敗しました: {str(e)}")
+            return VCenterWSSessionManager.VCENTER_STATUS_UNKNOWN
 
     @staticmethod
+    @Logging.func_logger
     async def get_or_create_vcenter_ws_session_async(
         redis: Redis, vcenter_name: str, status: VCenterStatus = VCENTER_STATUS_ALIVE
     ) -> VCenterStatus:
@@ -334,9 +354,6 @@ class VCenterWSSessionManager:
 
         Returns:
             VCenterStatus: 取得した値または新しく登録した値
-
-        Raises:
-            VCenterWSSessionError: Redis操作に失敗した場合、またはvCenter名が不正な場合
         """
         try:
             VCenterWSSessionManager.validate_vcenter_name(vcenter_name)
@@ -347,30 +364,32 @@ class VCenterWSSessionManager:
                 return status_updated
             return status_current
         except (RedisError, ConnectionError, TimeoutError) as e:
-            raise VCenterWSSessionError(f"vCenter接続状態の取得または作成に失敗しました: {str(e)}")
+            Logging.error(f"vCenter接続状態の取得または作成に失敗しました: {str(e)}")
+            return VCenterWSSessionManager.VCENTER_STATUS_UNKNOWN
 
     @staticmethod
-    async def remove_all_vcenter_ws_sessions_async(redis: Redis) -> VCenterStatus:
+    async def remove_all_vcenter_ws_sessions_async(redis: Redis, configs: dict) -> VCenterStatus:
         """
         全てのダウンマークを削除し、削除後のキーを返します
 
         Args:
             redis: Redis接続オブジェクト
+            configs: vCenterの設定情報
 
         Returns:
-            VCenterStatus: 取得した値または新しく登録した値
-
-        Raises:
-            VCenterWSSessionError: Redis操作に失敗した場合
+            VCenterStatus: 削除後のステータス。削除に失敗した場合は、全てのvCenterのステータスをunknownにした辞書を返す
         """
         try:
             vcenter_keys = await redis.keys(f"{VCenterWSSessionManager.VCENTER_WS_SESSION_PREFIX}*")
             for vcenter_key in vcenter_keys:
                 await redis.delete(vcenter_key)
-            status = await VCenterWSSessionManager.get_all_vcenter_ws_session_informations_async(redis)
+            status = await VCenterWSSessionManager.get_all_vcenter_ws_session_informations_async(
+                redis=redis, configs=configs
+            )
             return status
         except (RedisError, ConnectionError, TimeoutError) as e:
-            raise VCenterWSSessionError(f"vCenter接続状態の削除に失敗しました: {str(e)}")
+            Logging.error(f"vCenter接続状態の削除に失敗しました: {str(e)}")
+            return VCenterWSSessionManager.generate_all_vcenter_ws_session_informations_unknown(configs)
 
     @staticmethod
     @Logging.func_logger
@@ -384,16 +403,15 @@ class VCenterWSSessionManager:
 
         Returns:
             bool: vCenterの接続状態が"dead"の場合はTrue、それ以外（"alive"または未登録）の場合はFalse
-
-        Raises:
-            VCenterWSSessionError: Redis操作に失敗した場合、またはvCenter名が不正な場合
         """
         try:
             VCenterWSSessionManager.validate_vcenter_name(vcenter_name)
             status = await VCenterWSSessionManager.get_vcenter_ws_session_async(redis, vcenter_name)
             return status == VCenterWSSessionManager.VCENTER_STATUS_DEAD
         except (RedisError, ConnectionError, TimeoutError) as e:
-            raise VCenterWSSessionError(f"vCenter接続状態の確認に失敗しました: {str(e)}")
+            Logging.error(f"vCenter接続状態の確認に失敗しました: {str(e)}")
+            # エラーが発生した場合はFalseを返す
+            return False
 
     @staticmethod
     @Logging.func_logger
@@ -407,13 +425,12 @@ class VCenterWSSessionManager:
 
         Returns:
             bool: vCenterの接続状態が"dead"の場合はTrue、それ以外（"alive"または未登録）の場合はFalse
-
-        Raises:
-            VCenterWSSessionError: Redis操作に失敗した場合、またはvCenter名が不正な場合
         """
         try:
             VCenterWSSessionManager.validate_vcenter_name(vcenter_name)
             status = VCenterWSSessionManager.get_vcenter_ws_session(redis, vcenter_name)
             return status == VCenterWSSessionManager.VCENTER_STATUS_DEAD
-        except (RedisError, ConnectionError, TimeoutError) as e:
-            raise VCenterWSSessionError(f"vCenter接続状態の確認に失敗しました: {str(e)}")
+        except Exception as e:
+            Logging.error(f"vCenter接続状態の確認に失敗しました: {str(e)}")
+            # エラーが発生した場合はFalseを返す
+            return False

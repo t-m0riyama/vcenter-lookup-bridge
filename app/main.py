@@ -49,16 +49,25 @@ async def lifespan(app: FastAPI):
         Logging.error(e)
         sys.exit(cs.EXIT_ERR_LOAD_CONFIG)
 
-    # Initialize Cache
-    redis = aioredis.from_url(f"redis://{cache_host}:{cache_port}")
-    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
-    Logging.info(redis)
+    try:
+        # Initialize Cache
+        redis = init_redis_cache(cache_host, cache_port)
+    except Exception as e:
+        Logging.error(f"Redisの初期化に失敗しました。キャッシュ機能を無効化します。")
+        Logging.error(e)
 
     Connector.get_service_instances()
     Logging.info("Startup completed.")
     yield
     await redis.close()
     Logging.info("Shutdown completed.")
+
+
+def init_redis_cache(cache_host, cache_port):
+    redis = aioredis.from_url(f"redis://{cache_host}:{cache_port}")
+    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
+    Logging.info(redis)
+    return redis
 
 
 root_path = os.getenv("VLB_ROOT_PATH", VLB_ROOT_PATH_DEFAULT)

@@ -35,7 +35,9 @@ async def list_clusters(
     request_id = RequestUtil.get_request_id()
     try:
         Logging.info(f"{request_id} クラスタ一覧を取得します。")
-        vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations()
+        vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations(
+            configs=g.vcenter_configurations,
+        )
         clusters, total_cluster_count = Cluster.get_clusters_from_all_vcenters(
             service_instances=service_instances,
             configs=g.vcenter_configurations,
