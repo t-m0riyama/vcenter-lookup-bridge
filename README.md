@@ -21,24 +21,23 @@ vcenter-lookup-bridge
 ├── Dockerfile
 ├── README.md: this document
 ├── app
-│    └── src
-│         ├── config
-│         │    ├── uvicorn_log_config.yml: config file for uvicorn
-│         │    ├── vcenter_lookup_bridge.yml: config file
-│         │    └── vcenters
-│         │         └── vcenter.example.com.yml.sample: sample config forvCenter settings
-│         ├── log
-│         │    ├── access.log: HTTP access log
-│         │    ├── error.log: error log
-│         │    └── vcenter_lookup_bridge.log: general information log
-│         ├── main.py: main script
-│         ├── requirements.txt: dependent modules
-│         └── vcenter_lookup_bridge
-│              ├── api
-│              │    └── routes
-│              ├── schemas
-│              ├── utils
-│              └── vmware
+│    ├── config
+│    │    ├── uvicorn_log_config.yml: config file for uvicorn
+│    │    ├── vcenter_lookup_bridge.yml: config file
+│    │    └── vcenters
+│    │         └── vcenter.example.com.yml.sample: sample config forvCenter settings
+│    ├── log
+│    │    ├── access.log: HTTP access log
+│    │    ├── error.log: error log
+│    │    └── vcenter_lookup_bridge.log: general information log
+│    ├── main.py: main script
+│    ├── requirements.txt: dependent modules
+│    └── vcenter_lookup_bridge
+│         ├── api
+│         │    └── routes
+│         ├── schemas
+│         ├── utils
+│         └── vmware
 ├── docker-compose.override.yml.sample
 ├── docker-compose.yml
 ├── docs: other documents
