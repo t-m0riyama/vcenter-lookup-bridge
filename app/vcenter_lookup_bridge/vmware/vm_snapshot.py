@@ -60,7 +60,8 @@ class VmSnapshot(object):
                 all_snapshots.extend(snapshots)
                 total_snapshot_count = len(all_snapshots)
             except Exception as e:
-                Logging.error(f"vCenter({vcenter_name})からのスナップショット情報取得に失敗: {e}")
+                Logging.warning(f"{request_id} vCenter({vcenter_name})からのスナップショット情報取得に失敗: {e}")
+                raise e
         else:
             # vCenterを指定しない場合、すべてのvCenterから仮想マシン一覧を取得し、各仮想マシンの持つスナップショット情報を取得
             futures = {}
@@ -93,7 +94,7 @@ class VmSnapshot(object):
                         all_snapshots = all_snapshots[:max_results]
 
                 except Exception as e:
-                    Logging.error(f"{request_id} vCenter({vcenter_name})からのVM取得に失敗: {e}")
+                    Logging.warning(f"{request_id} vCenter({vcenter_name})からのVM取得に失敗: {e}")
 
         return all_snapshots, total_snapshot_count
 
@@ -115,7 +116,9 @@ class VmSnapshot(object):
 
         # 指定されたvCenterのService Instanceを取得
         if vcenter_name not in service_instances:
-            raise HTTPException(status_code=404, detail=f"vCenter({vcenter_name}) not found")
+            raise HTTPException(
+                status_code=500, detail=f"指定したvCenter({vcenter_name})が接続先に登録されていません。"
+            )
 
         content = service_instances[vcenter_name].RetrieveContent()
         config = configs[vcenter_name]
@@ -184,9 +187,8 @@ class VmSnapshot(object):
                 )
                 if snapshots is not None:
                     all_snapshots.extend(snapshots)
-            except HTTPException as e:
-                pass
             except Exception as e:
+                Logging.error(f"{request_id} vCenter({vcenter_name})からのスナップショット情報取得に失敗: {e}")
                 raise e
         else:
             # vCenterを指定しない場合、すべてのvCenterから仮想マシン一覧を取得
@@ -208,11 +210,8 @@ class VmSnapshot(object):
                         snapshots = futures[vcenter_name].result()
                         if snapshots is not None:
                             all_snapshots.extend(snapshots)
-                except HTTPException as e:
-                    Logging.info(f"{request_id} vCenter({vcenter_name})からのスナップショット情報取得に失敗: {e}")
-                    pass
                 except Exception as e:
-                    raise e
+                    Logging.error(f"{request_id} vCenter({vcenter_name})からのスナップショット情報取得に失敗: {e}")
         return all_snapshots
 
     @classmethod
@@ -228,7 +227,9 @@ class VmSnapshot(object):
 
         # 指定されたvCenterのService Instanceを取得
         if vcenter_name not in service_instances:
-            raise HTTPException(status_code=404, detail=f"{request_id} vCenter({vcenter_name}) not found")
+            raise HTTPException(
+                status_code=500, detail=f"指定したvCenter({vcenter_name})が接続先に登録されていません。"
+            )
 
         content = service_instances[vcenter_name].RetrieveContent()
         datacenter = content.rootFolder.childEntity[0]

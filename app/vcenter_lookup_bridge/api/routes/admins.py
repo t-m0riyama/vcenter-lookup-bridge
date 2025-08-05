@@ -14,6 +14,11 @@ router = APIRouter(prefix="/admins", tags=["admins"])
     "/cache/flush",
     response_model=AdminResponseSchema,
     description="キャッシュ済みの全てのレスポンスをクリアします。",
+    responses={
+        500: {
+            "description": "キャッシュのクリア処理中にエラーが発生した場合に返されます。",
+        },
+    },
 )
 async def flush_caches():
     request_id = RequestUtil.get_request_id()
@@ -40,6 +45,11 @@ async def flush_caches():
     "/ws_session/reset",
     response_model=AdminResponseSchema,
     description="全てのvCenterのダウンマークをクリアします。",
+    responses={
+        500: {
+            "description": "vCenterのダウンマークのクリア処理中にエラーが発生した場合に返されます。",
+        },
+    },
 )
 async def reset_ws_session():
     request_id = RequestUtil.get_request_id()

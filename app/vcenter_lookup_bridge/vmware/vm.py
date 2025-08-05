@@ -60,7 +60,8 @@ class Vm(object):
                 all_vms.extend(vms)
                 total_vm_count = len(all_vms)
             except Exception as e:
-                Logging.error(f"vCenter({vcenter_name})からの仮想マシン情報取得に失敗: {e}")
+                Logging.error(f"{request_id} vCenter({vcenter_name})からの仮想マシン情報取得に失敗: {e}")
+                raise e
         else:
             # vCenterを指定しない場合、すべてのvCenterから仮想マシン一覧を取得
             futures = {}
@@ -116,7 +117,9 @@ class Vm(object):
 
         # 指定されたvCenterのService Instanceを取得
         if vcenter_name not in service_instances:
-            raise HTTPException(status_code=404, detail=f"vCenter({vcenter_name}) not found")
+            raise HTTPException(
+                status_code=500, detail=f"指定したvCenter({vcenter_name})が接続先に登録されていません。"
+            )
 
         content = service_instances[vcenter_name].RetrieveContent()
         config = configs[vcenter_name]
@@ -237,7 +240,9 @@ class Vm(object):
 
         # 指定されたvCenterのService Instanceを取得
         if vcenter_name not in service_instances:
-            raise HTTPException(status_code=404, detail=f"vCenter({vcenter_name}) not found")
+            raise HTTPException(
+                status_code=500, detail=f"指定したvCenter({vcenter_name})が接続先に登録されていません。"
+            )
 
         content = service_instances[vcenter_name].RetrieveContent()
         datacenter = content.rootFolder.childEntity[0]

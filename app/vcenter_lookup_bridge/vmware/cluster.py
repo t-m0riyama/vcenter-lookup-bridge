@@ -51,7 +51,7 @@ class Cluster(object):
                 all_clusters.extend(clusters)
                 total_cluster_count = len(all_clusters)
             except Exception as e:
-                Logging.error(f"vCenter({vcenter_name})からのクラスタ情報取得に失敗: {e}")
+                Logging.error(f"{request_id} vCenter({vcenter_name})からのクラスタ情報取得に失敗: {e}")
         else:
             # vCenterを指定しない場合、すべてのvCenterからクラスタ一覧を取得
             futures = {}

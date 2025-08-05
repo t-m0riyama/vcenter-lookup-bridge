@@ -2,7 +2,7 @@ import os
 import vcenter_lookup_bridge.vmware.instances as g
 
 from typing import Annotated
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from fastapi_cache.decorator import cache
 from vcenter_lookup_bridge.schemas.datastore_parameter import DatastoreListResponseSchema, DatastoreSearchSchema
 from vcenter_lookup_bridge.utils.logging import Logging
@@ -23,6 +23,14 @@ cache_expire_secs = int(os.getenv("VLB_CACHE_EXPIRE_SECS", CACHE_EXPIRE_SECS_DEF
     "/",
     response_model=DatastoreListResponseSchema,
     description="タグを指定して、同タグが付与されたデータストア一覧を取得します。",
+    responses={
+        404: {
+            "description": "指定した条件のデータストアが見つからない場合に返されます。",
+        },
+        500: {
+            "description": "データストア情報の一覧を取得中にエラーが発生した場合に返されます。",
+        },
+    },
 )
 @cache(expire=cache_expire_secs)
 async def list_datastores(
@@ -63,14 +71,11 @@ async def list_datastores(
                 requestId=request_id,
             )
         else:
-            # データが見つからない場合の部分成功
-            return ApiResponse.create(
-                results=[],
-                success=False,
-                message="指定した条件のデータストア情報は見つかりませんでした。",
-                vcenterWsSessions=vcenter_ws_sessions,
-                requestId=request_id,
+            # データストアが見つからない場合は404エラーを返す
+            raise HTTPException(
+                status_code=404,
+                detail=f"指定した条件のデータストアは見つかりませんでした。",
             )
     except Exception as e:
-        Logging.error(f"ポデータストア情報の一覧を取得中にエラーが発生しました({request_id}): {e}")
+        Logging.error(f"{request_id} データストア情報の一覧を取得中にエラーが発生しました: {e}")
         raise e

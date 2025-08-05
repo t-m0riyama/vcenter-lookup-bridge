@@ -65,6 +65,7 @@ class Datastore(object):
                 total_datastore_count = len(all_datastores)
             except Exception as e:
                 Logging.error(f"{request_id} vCenter({vcenter_name})からのデータストア情報取得に失敗: {e}")
+                raise e
         else:
             # vCenterを指定しない場合、すべてのvCenterからデータストア一覧を取得
             futures = {}
@@ -123,7 +124,9 @@ class Datastore(object):
 
         # 指定されたvCenterのService Instanceを取得
         if vcenter_name not in service_instances:
-            raise HTTPException(status_code=404, detail=f"vCenter({vcenter_name}) not found")
+            raise HTTPException(
+                status_code=500, detail=f"指定したvCenter({vcenter_name})が接続先に登録されていません。"
+            )
 
         content = service_instances[vcenter_name].RetrieveContent()
         config = configs[vcenter_name]
@@ -131,6 +134,8 @@ class Datastore(object):
         cv = content.viewManager.CreateContainerView(container=content.rootFolder, type=[vim.Datastore], recursive=True)
         datastores = cv.view
         datastore_tags = Tag.get_all_datastore_tags(config=config)
+        if datastore_tags is None:
+            raise HTTPException(status_code=500, detail="データストアのタグを取得中にエラーが発生しました。")
 
         for datastore in datastores:
             # offsetまでスキップ

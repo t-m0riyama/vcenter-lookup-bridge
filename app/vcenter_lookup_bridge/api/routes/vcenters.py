@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Query
-from fastapi import HTTPException
+from fastapi import APIRouter, Query, HTTPException
 import vcenter_lookup_bridge.vmware.instances as g
 from typing import Annotated
 
@@ -17,6 +16,14 @@ router = APIRouter(prefix="/vcenters", tags=["vcenters"])
     "/",
     response_model=VCenterListResponseSchema,
     description="接続先のvCenter一覧を取得します。",
+    responses={
+        404: {
+            "description": "指定した条件のvCenterが見つからない場合に返されます。",
+        },
+        500: {
+            "description": "vCenter情報の一覧を取得中にエラーが発生した場合に返されます。",
+        },
+    },
 )
 async def list_vcenters(
     search_params: Annotated[VCenterListSearchSchema, Query()],
@@ -37,22 +44,20 @@ async def list_vcenters(
             request_id=request_id,
         )
 
-        return ApiResponse.create(
-            results=vcenters,
-            success=True,
-            message="接続先のvCenter一覧を取得しました。",
-            vcenterWsSessions=vcenter_ws_sessions,
-            requestId=request_id,
-        )
-    except HTTPException as http_exp:
-        # データが見つからない場合の部分成功
-        return ApiResponse.create(
-            results=[],
-            success=False,
-            message="接続先に指定したvCenterは見つかりませんでした。",
-            vcenterWsSessions=vcenter_ws_sessions,
-            requestId=request_id,
-        )
+        if len(vcenters) > 0:
+            return ApiResponse.create(
+                results=vcenters,
+                success=True,
+                message="接続先のvCenter一覧を取得しました。",
+                vcenterWsSessions=vcenter_ws_sessions,
+                requestId=request_id,
+            )
+        else:
+            # vCenterが見つからない場合は404エラーを返す
+            raise HTTPException(
+                status_code=404,
+                detail=f"指定した条件のvCenterは見つかりませんでした。",
+            )
     except Exception as e:
         Logging.error(f"{request_id} vCenter一覧を取得中にエラーが発生しました: {e}")
         raise e

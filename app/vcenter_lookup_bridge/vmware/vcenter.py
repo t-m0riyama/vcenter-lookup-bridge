@@ -26,9 +26,9 @@ class VCenter(object):
         all_vcenters = []
         if vcenter_name:
             # vCenterを指定した場合、指定したvCenterの情報のみを取得
-            # 指定されたvCenterのService Instanceを取得
+            # 接続先のvCenterが見つからない場合は空のリストを返す
             if vcenter_name not in configs.keys():
-                raise HTTPException(status_code=404, detail=f"vCenter({vcenter_name}) not found")
+                return all_vcenters
 
             vcenter_info = cls._generate_vcenter_info(
                 config=configs[vcenter_name],

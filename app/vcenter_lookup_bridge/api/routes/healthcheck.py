@@ -14,6 +14,11 @@ router = APIRouter(prefix="/healthcheck", tags=["healthcheck"])
     "/",
     response_model=HealthcheckResponseSchema,
     description="サービスのステータスを返却します。",
+    responses={
+        500: {
+            "description": "サービスのステータス確認中にエラーが発生した場合に返されます。",
+        },
+    },
 )
 async def get_service_status(
     service_instances: object = Depends(Connector.get_service_instances),
