@@ -29,6 +29,8 @@ class Tag(object):
     @Logging.func_logger
     def get_all_datastore_tags(cls, config) -> dict:
         client = cls._create_client(config=config)
+        if client is None:
+            return None
         cat_dict, tag_dict = cls._generate_all_tag_dict(client=client)
         return cls._generate_object_tag_dict(
             client=client, cat_dict=cat_dict, tag_dict=tag_dict, object_type="Datastore"
@@ -38,21 +40,29 @@ class Tag(object):
     @Logging.func_logger
     def get_all_portgroup_tags(cls, config) -> dict:
         client = cls._create_client(config=config)
+        if client is None:
+            return None
         cat_dict, tag_dict = cls._generate_all_tag_dict(client=client)
         return cls._generate_object_tag_dict(client=client, cat_dict=cat_dict, tag_dict=tag_dict, object_type="Network")
 
     @classmethod
     @Logging.func_logger
     def _create_client(cls, config) -> VsphereClient:
-        session = requests.session()
-        session.verify = not config["ignore_ssl_cert_verify"]
-        client = create_vsphere_client(
-            server=config["hostname"],
-            username=config["username"],
-            password=config["password"],
-            session=session,
-        )
-        return client
+        try:
+            session = requests.session()
+            session.verify = not config["ignore_ssl_cert_verify"]
+            # vSphere REST APIの接続先のポート番号は指定することはできない。
+            # HTTPS/443固定であることに留意
+            client = create_vsphere_client(
+                server=config["hostname"],
+                username=config["username"],
+                password=config["password"],
+                session=session,
+            )
+            return client
+        except Exception as e:
+            Logging.error(f"vSphere REST API({config['hostname']})への接続に失敗: {e}")
+            return None
 
     @classmethod
     @Logging.func_logger
