@@ -45,5 +45,5 @@ vCenter lookup Bridge API TODO
   - [x] リバースプロキシ
     - [x] TLS https support
 
-* [ ] その他
-  - [ ] Redisダウン時のエラーハンドリング
+* [x] その他
+  - [x] Redisダウン時のエラーハンドリング
