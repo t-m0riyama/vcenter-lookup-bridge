@@ -5,7 +5,13 @@ from fastapi import APIRouter, Depends, Path, Query, HTTPException
 from fastapi_cache.decorator import cache
 import vcenter_lookup_bridge.vmware.instances as g
 from vcenter_lookup_bridge.schemas.common import ApiResponse, PaginationInfo
-from vcenter_lookup_bridge.schemas.vm_parameter import VmListSearchSchema, VmListResponseSchema, VmSearchSchema
+from vcenter_lookup_bridge.schemas.vm_parameter import (
+    VmListSearchSchema,
+    VmListResponseSchema,
+    VmGetResponseSchema,
+    VmResponseSchema,
+    VmSearchSchema,
+)
 from vcenter_lookup_bridge.utils.logging import Logging
 from vcenter_lookup_bridge.utils.request_util import RequestUtil
 from vcenter_lookup_bridge.vmware.connector import Connector
@@ -83,7 +89,7 @@ async def list_vms(
 
 @router.get(
     "/{vm_instance_uuid}",
-    response_model=VmListResponseSchema,
+    response_model=VmGetResponseSchema,
     description="インスタンスUUIDを指定して、単一の仮想マシンの情報を取得します。",
     responses={
         404: {
@@ -112,15 +118,15 @@ async def get_vm(
         vcenter_ws_sessions = VCenterWSSessionManager.get_all_vcenter_ws_session_informations(
             configs=g.vcenter_configurations,
         )
-        vms = Vm.get_vm_by_instance_uuid_from_all_vcenters(
+        vm = Vm.get_vm_by_instance_uuid_from_all_vcenters(
             vcenter_name=search_params.vcenter,
             service_instances=service_instances,
             instance_uuid=vm_instance_uuid,
             request_id=request_id,
         )
-        if isinstance(vms, list) and len(vms) > 0:
+        if isinstance(vm, VmResponseSchema):
             return ApiResponse.create(
-                results=vms,
+                results=vm,
                 success=True,
                 message="仮想マシン情報を取得しました",
                 vcenterWsSessions=vcenter_ws_sessions,

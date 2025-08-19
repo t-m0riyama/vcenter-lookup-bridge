@@ -167,10 +167,10 @@ class Vm(object):
         service_instances: dict,
         instance_uuid: str,
         request_id: str = None,
-    ) -> list[VmResponseSchema]:
-        """全vCenterから仮想マシン一覧を取得"""
+    ) -> VmResponseSchema:
+        """指定したインスタンスUUIDの仮想マシンを取得"""
 
-        all_vms = []
+        result = None
         max_vcenter_web_service_worker_threads = int(
             os.getenv(
                 "VLB_MAX_VCENTER_WEB_SERVICE_WORKER_THREADS",
@@ -181,15 +181,15 @@ class Vm(object):
         if vcenter_name:
             # vCenterを指定した場合、指定したvCenterから仮想マシン一覧を取得
             try:
-                vms = cls._get_vm_by_instance_uuid(
+                vm = cls._get_vm_by_instance_uuid(
                     vcenter_name=vcenter_name,
                     service_instances=service_instances,
                     instance_uuid=instance_uuid,
                     request_id=request_id,
                 )
-                if vms is not None:
+                if vm is not None:
                     Logging.info(f"{request_id} vCenter({vcenter_name})からの仮想マシン情報取得に成功")
-                    all_vms.append(vms)
+                    result = vm
             except HTTPException as e:
                 Logging.info(f"{request_id} vCenter({vcenter_name})からのVM取得に失敗: {e}")
                 pass
@@ -212,10 +212,10 @@ class Vm(object):
 
                     # 各スレッドの実行結果を回収
                     for vcenter_name in service_instances.keys():
-                        vms = futures[vcenter_name].result()
-                        if vms is not None:
+                        vm = futures[vcenter_name].result()
+                        if vm is not None:
                             Logging.info(f"{request_id} vCenter({vcenter_name})からの仮想マシン情報取得に成功")
-                            all_vms.append(vms)
+                            result = vm
                         else:
                             Logging.info(
                                 f"{request_id} vCenter({vcenter_name})にインスタンスUUID({instance_uuid})を持つ仮想マシンは見つかりませんでした。"
@@ -225,7 +225,7 @@ class Vm(object):
                     pass
                 except Exception as e:
                     raise e
-        return all_vms
+        return result
 
     @classmethod
     @Logging.func_logger

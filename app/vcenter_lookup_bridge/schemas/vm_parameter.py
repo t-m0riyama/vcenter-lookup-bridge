@@ -145,3 +145,9 @@ class VmListResponseSchema(ApiResponse[List[VmResponseSchema]]):
     """仮想マシン一覧のレスポンススキーマ"""
 
     pass
+
+
+class VmGetResponseSchema(ApiResponse[VmResponseSchema]):
+    """単一仮想マシンのレスポンススキーマ"""
+
+    pass
