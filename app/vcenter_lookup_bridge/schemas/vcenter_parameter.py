@@ -52,6 +52,10 @@ class VCenterResponseSchema(BaseModel):
         description="vCenterのポート番号を示します。",
         example=443,
     )
+    description: str = Field(
+        description="このvCenterの説明を示します。",
+        example="vcenter01の説明",
+    )
 
 
 class VCenterListResponseSchema(ApiResponse[List[VCenterResponseSchema]]):

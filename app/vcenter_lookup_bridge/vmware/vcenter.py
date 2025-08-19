@@ -56,5 +56,6 @@ class VCenter(object):
             "name": vcenter_name,
             "hostName": config["hostname"],
             "port": config["port"],
+            "description": config["description"],
         }
         return VCenterResponseSchema(**vcenter_info)
