@@ -4,6 +4,9 @@
 #   config/vcenters配下の設定ファイル中でユニークな名前を付けること
 name: "your-vcenter"
 
+# 説明
+description: "vCenter(テスト環境)"
+
 # vCenterのホスト名／IP
 hostname: "vcenter.example.com"
 # vCenterのポート番号
