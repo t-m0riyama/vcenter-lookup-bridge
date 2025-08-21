@@ -51,6 +51,8 @@ services:
       #- traefik.http.routers.vcenter_lookup_bridge.tls.certresolver=myresolver
     networks:
       - traefik-net
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 volumes:
   redis-data:
