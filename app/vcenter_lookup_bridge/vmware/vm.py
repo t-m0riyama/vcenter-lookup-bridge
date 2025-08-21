@@ -118,7 +118,7 @@ class Vm(object):
         # 指定されたvCenterのService Instanceを取得
         if vcenter_name not in service_instances:
             raise HTTPException(
-                status_code=500, detail=f"指定したvCenter({vcenter_name})が接続先に登録されていません。"
+                status_code=404, detail=f"指定したvCenter({vcenter_name})が接続先に登録されていません。"
             )
 
         content = service_instances[vcenter_name].RetrieveContent()
@@ -241,7 +241,7 @@ class Vm(object):
         # 指定されたvCenterのService Instanceを取得
         if vcenter_name not in service_instances:
             raise HTTPException(
-                status_code=500, detail=f"指定したvCenter({vcenter_name})が接続先に登録されていません。"
+                status_code=404, detail=f"指定したvCenter({vcenter_name})が接続先に登録されていません。"
             )
 
         content = service_instances[vcenter_name].RetrieveContent()
