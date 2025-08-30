@@ -5,6 +5,9 @@ from vcenter_lookup_bridge.api.routes import (
     portgroups,
     vcenters,
     clusters,
+    hosts,
+    events,
+    alarms,
     vms,
     vm_snapshots,
     vm_folders,
@@ -20,4 +23,7 @@ api_router.include_router(vm_folders.router)
 api_router.include_router(healthcheck.router)
 api_router.include_router(vcenters.router)
 api_router.include_router(clusters.router)
+api_router.include_router(hosts.router)
+api_router.include_router(events.router)
+api_router.include_router(alarms.router)
 api_router.include_router(admins.router)
