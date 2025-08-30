@@ -6,7 +6,7 @@ from fastapi import HTTPException
 from pyVmomi import vim
 from vcenter_lookup_bridge.schemas.datastore_parameter import DatastoreResponseSchema
 from vcenter_lookup_bridge.utils.logging import Logging
-from vcenter_lookup_bridge.vmware.host import Host
+from vcenter_lookup_bridge.vmware.host_helper import HostHelper
 from vcenter_lookup_bridge.vmware.tag import Tag
 
 
@@ -176,7 +176,7 @@ class Datastore(object):
             # データストアをマウントしているホストの情報を取得
             hosts = []
             for host in datastore.host:
-                hosts.append((Host.get_host_by_object_key(content=content, object_key=host.key))["name"])
+                hosts.append((HostHelper.get_host_by_object_key(content=content, object_key=host.key))["name"])
 
             datastore_config = {
                 "name": datastore.name,
