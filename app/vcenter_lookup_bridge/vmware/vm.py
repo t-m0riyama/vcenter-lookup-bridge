@@ -322,18 +322,18 @@ class Vm(object):
                         }
                     )
         else:
-            # VCSIMシミュレータの仮想マシンの場合、仮想ディスクとポートグループにダミーデータを追加
+            # vCenterのシミュレータなどを利用している場合、仮想ディスクとポートグループにダミーデータを追加
             disk_devices.append(
                 {
-                    "label": "VCSIM Simulator Label",
-                    "datastore": "VCSIM Simulator Datastore",
+                    "label": "Dummy Label",
+                    "datastore": "Dummy Datastore",
                     "sizeGB": 100,
                 }
             )
-            portgroup_name = "VCSIM Simulator PortGroup"
+            portgroup_name = "Dummy PortGroup"
             network_devices.append(
                 {
-                    "label": "VCSIM Simulator Label",
+                    "label": "Dummy Label",
                     "macAddress": "00:11:22:33:44:55",
                     "portgroup": portgroup_name,
                     "connected": True,
