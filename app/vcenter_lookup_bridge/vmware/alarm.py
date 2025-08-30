@@ -1,6 +1,5 @@
 import datetime
 import os
-import pytz
 from typing import List, Optional
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import HTTPException
