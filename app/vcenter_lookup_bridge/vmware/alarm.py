@@ -26,6 +26,13 @@ class Alarm(object):
         vcenter_name: Optional[str] = None,
         begin_time: str = None,
         end_time: str = None,
+        days_ago_begin: int = None,
+        days_ago_end: int = None,
+        hours_ago_begin: int = None,
+        hours_ago_end: int = None,
+        statuses: List[str] = None,
+        alarm_sources: List[str] = None,
+        acknowledged: bool = None,
         offset=0,
         max_results=100,
         request_id: str = None,
@@ -49,6 +56,13 @@ class Alarm(object):
                     service_instances=service_instances,
                     begin_time=begin_time,
                     end_time=end_time,
+                    days_ago_begin=days_ago_begin,
+                    days_ago_end=days_ago_end,
+                    hours_ago_begin=hours_ago_begin,
+                    hours_ago_end=hours_ago_end,
+                    statuses=statuses,
+                    alarm_sources=alarm_sources,
+                    acknowledged=acknowledged,
                     request_id=request_id,
                 )
                 Logging.info(f"{request_id} vCenter({vcenter_name})からのトリガー済みアラーム情報取得に成功")
@@ -69,6 +83,13 @@ class Alarm(object):
                             service_instances,
                             begin_time,
                             end_time,
+                            days_ago_begin,
+                            days_ago_end,
+                            hours_ago_begin,
+                            hours_ago_end,
+                            statuses,
+                            alarm_sources,
+                            acknowledged,
                             request_id,
                         )
 
@@ -99,6 +120,13 @@ class Alarm(object):
         service_instances: dict,
         begin_time: str = None,
         end_time: str = None,
+        days_ago_begin: int = None,
+        days_ago_end: int = None,
+        hours_ago_begin: int = None,
+        hours_ago_end: int = None,
+        statuses: List[str] = None,
+        alarm_sources: List[str] = None,
+        acknowledged: bool = None,
         request_id: str = None,
     ) -> list[AlarmResponseSchema]:
         """特定のvCenterからトリガー済みのアラーム一覧を取得"""
@@ -128,14 +156,57 @@ class Alarm(object):
         else:
             begin_time_obj = (datetime.datetime.now() - datetime.timedelta(days=7)).astimezone(datetime.timezone.utc)
 
-        # 時間帯の指定がない場合、現在までのトリガー済みのアラームを取得
-        if end_time:
-            end_time_obj = datetime.datetime.fromisoformat(end_time).astimezone(datetime.timezone.utc)
+        # 時間帯の指定がない場合、7日前からのイベントを取得
+        if hours_ago_begin:
+            begin_time_obj = (datetime.datetime.now() - datetime.timedelta(hours=hours_ago_begin)).astimezone(
+                datetime.timezone.utc
+            )
+            Logging.info(f"{request_id} 時間帯の開始時間: {begin_time_obj}")
+        elif days_ago_begin:
+            begin_time_obj = (datetime.datetime.now() - datetime.timedelta(days=days_ago_begin)).astimezone(
+                datetime.timezone.utc
+            )
+            Logging.info(f"{request_id} 時間帯の開始日: {begin_time_obj}")
         else:
-            end_time_obj = datetime.datetime.now().astimezone(datetime.timezone.utc)
+            if begin_time:
+                begin_time_obj = datetime.datetime.fromisoformat(begin_time).astimezone(datetime.timezone.utc)
+            else:
+                begin_time_obj = (datetime.datetime.now() - datetime.timedelta(days=7)).astimezone(
+                    datetime.timezone.utc
+                )
+
+        # 時間帯の指定がない場合、現在までのイベントを取得
+        if hours_ago_end:
+            end_time_obj = (datetime.datetime.now() - datetime.timedelta(hours=hours_ago_end)).astimezone(
+                datetime.timezone.utc
+            )
+            Logging.info(f"{request_id} 時間帯の終了時間: {end_time_obj}")
+        elif days_ago_end:
+            end_time_obj = (datetime.datetime.now() - datetime.timedelta(days=days_ago_end)).astimezone(
+                datetime.timezone.utc
+            )
+            Logging.info(f"{request_id} 時間帯の終了日: {end_time_obj}")
+        else:
+            if end_time:
+                end_time_obj = datetime.datetime.fromisoformat(end_time).astimezone(datetime.timezone.utc)
+            else:
+                end_time_obj = datetime.datetime.now().astimezone(datetime.timezone.utc)
 
         for alarm_state in triggered_alarms:
             if isinstance(alarm_state, vim.AlarmState):
+                # ステータスの条件を指定した場合、マッチしないアラームをスキップ
+                if statuses:
+                    if not alarm_state.overallStatus in statuses:
+                        continue
+                # 確認済みかどうかの条件を指定した場合、マッチしないアラームをスキップ
+                if acknowledged:
+                    if not alarm_state.acknowledged == acknowledged:
+                        continue
+                # アラームソースの条件を指定した場合、マッチしないアラームをスキップ
+                if alarm_sources:
+                    if hasattr(alarm_state, "entity") and alarm_state.entity:
+                        if not alarm_state.entity.name in alarm_sources:
+                            continue
                 alarm_time = alarm_state.time.astimezone(datetime.timezone.utc)
                 if alarm_time >= begin_time_obj and alarm_time < end_time_obj:
                     alarm_info = cls._generate_alarm_info(datacenter, alarm_state, vcenter_name)

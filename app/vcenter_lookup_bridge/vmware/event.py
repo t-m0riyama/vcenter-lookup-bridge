@@ -15,7 +15,7 @@ class Event(object):
     # Const
     VLB_MAX_RETRIEVE_VCENTER_OBJECTS_DEFAULT = 1000
     VLB_MAX_VCENTER_WEB_SERVICE_WORKER_THREADS_DEFAULT = 10
-    VLB_MAX_RETRIEVE_EVENTS_PER_VCENTER_DEFAULT = 2000
+    VLB_MAX_RETRIEVE_EVENTS_PER_VCENTER_DEFAULT = 1000
 
     @classmethod
     @Logging.func_logger
@@ -26,6 +26,14 @@ class Event(object):
         vcenter_name: Optional[str] = None,
         begin_time: str = None,
         end_time: str = None,
+        days_ago_begin: int = None,
+        days_ago_end: int = None,
+        hours_ago_begin: int = None,
+        hours_ago_end: int = None,
+        event_types: List[str] = None,
+        event_sources: List[str] = None,
+        user_names: List[str] = None,
+        ip_addresses: List[str] = None,
         offset=0,
         max_results=100,
         request_id: str = None,
@@ -49,6 +57,14 @@ class Event(object):
                     service_instances=service_instances,
                     begin_time=begin_time,
                     end_time=end_time,
+                    days_ago_begin=days_ago_begin,
+                    days_ago_end=days_ago_end,
+                    hours_ago_begin=hours_ago_begin,
+                    hours_ago_end=hours_ago_end,
+                    event_types=event_types,
+                    event_sources=event_sources,
+                    user_names=user_names,
+                    ip_addresses=ip_addresses,
                     request_id=request_id,
                 )
                 Logging.info(f"{request_id} vCenter({vcenter_name})からのイベント情報取得に成功")
@@ -69,6 +85,14 @@ class Event(object):
                             service_instances,
                             begin_time,
                             end_time,
+                            days_ago_begin,
+                            days_ago_end,
+                            hours_ago_begin,
+                            hours_ago_end,
+                            event_types,
+                            event_sources,
+                            user_names,
+                            ip_addresses,
                             request_id,
                         )
 
@@ -99,6 +123,14 @@ class Event(object):
         service_instances: dict,
         begin_time: str = None,
         end_time: str = None,
+        days_ago_begin: int = None,
+        days_ago_end: int = None,
+        hours_ago_begin: int = None,
+        hours_ago_end: int = None,
+        event_types: List[str] = None,
+        event_sources: List[str] = None,
+        user_names: List[str] = None,
+        ip_addresses: List[str] = None,
         request_id: str = None,
     ) -> list[EventResponseSchema]:
         """特定のvCenterからイベント一覧を取得"""
@@ -123,26 +155,61 @@ class Event(object):
         time_filter = vim.event.EventFilterSpec.ByTime()
 
         # 時間帯の指定がない場合、7日前からのイベントを取得
-        if begin_time:
-            time_filter.beginTime = datetime.datetime.fromisoformat(begin_time)
+        if hours_ago_begin:
+            time_filter.beginTime = (datetime.datetime.now() - datetime.timedelta(hours=hours_ago_begin)).astimezone(
+                datetime.timezone.utc
+            )
+        elif days_ago_begin:
+            time_filter.beginTime = (datetime.datetime.now() - datetime.timedelta(days=days_ago_begin)).astimezone(
+                datetime.timezone.utc
+            )
         else:
-            time_filter.beginTime = datetime.datetime.now() - datetime.timedelta(days=7)
+            if begin_time:
+                time_filter.beginTime = datetime.datetime.fromisoformat(begin_time)
+            else:
+                time_filter.beginTime = datetime.datetime.now() - datetime.timedelta(days=7)
 
         # 時間帯の指定がない場合、現在までのイベントを取得
-        if end_time:
-            time_filter.endTime = datetime.datetime.fromisoformat(end_time)
+        if hours_ago_end:
+            time_filter.endTime = (datetime.datetime.now() - datetime.timedelta(hours=hours_ago_end)).astimezone(
+                datetime.timezone.utc
+            )
+        elif days_ago_end:
+            time_filter.endTime = (datetime.datetime.now() - datetime.timedelta(days=days_ago_end)).astimezone(
+                datetime.timezone.utc
+            )
         else:
-            time_filter.endTime = datetime.datetime.now()
+            if end_time:
+                time_filter.endTime = datetime.datetime.fromisoformat(end_time)
+            else:
+                time_filter.endTime = datetime.datetime.now()
+
         filter_spec.time = time_filter
 
-        collector = event_mgr.CreateCollectorForEvents(filter_spec)
-        events = collector.ReadNextEvents(max_retrieve_events)  # 最新100イベントを取得
+        # イベントタイプの指定をした場合、該当イベントのみ取得するフィルタを設定
+        if event_types:
+            filter_spec.eventTypeId = event_types
+
+        # ユーザ名を指定した場合、ユーザフィルタを指定
+        if user_names:
+            user_filter = vim.event.EventFilterSpec.ByUsername()
+            user_filter.userList = user_names
+            filter_spec.userName = user_filter
+        collector = event_mgr.CreateCollectorForEvents(filter=filter_spec)
+        events = collector.ReadNextEvents(max_retrieve_events)
 
         for event in events:
             if isinstance(event, vim.Event):
                 event_info = cls._generate_event_info(datacenter, event, vcenter_name)
+                # IPアドレスの条件を指定した場合、マッチしないイベントをスキップ
+                if ip_addresses:
+                    if event_info.ipAddress not in ip_addresses:
+                        continue
+                # イベントソースの条件を指定した場合、マッチしないイベントをスキップ
+                if event_sources:
+                    if event_info.eventSource not in event_sources:
+                        continue
                 results.append(event_info)
-
         return results
 
     @classmethod
@@ -150,11 +217,11 @@ class Event(object):
     def _generate_event_info(cls, datacenter, event: vim.Event, vcenter_name: str) -> EventResponseSchema:
         """イベント情報を生成"""
 
-        if hasattr(event, "entity") and event.entity:
+        if hasattr(event, "entity") and event.entity is not None:
             event_source = event.entity.name
-        elif hasattr(event, "host") and event.host:
+        elif hasattr(event, "host") and event.host is not None:
             event_source = event.host.name
-        elif hasattr(event, "vm") and event.vm:
+        elif hasattr(event, "vm") and event.vm is not None:
             event_source = event.vm.name
         else:
             event_source = None
@@ -167,6 +234,7 @@ class Event(object):
         event_info = {
             "vcenter": vcenter_name,
             "datacenter": datacenter.name,
+            "eventType": type(event).__name__.replace("vim.event.", ""),
             "message": event.fullFormattedMessage,
             "createdTime": event.createdTime.isoformat(),
             "eventSource": event_source,

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from vcenter_lookup_bridge.schemas.common import ApiResponse
 from typing import List
 
@@ -6,15 +6,51 @@ from typing import List
 class AlarmListSearchSchema(BaseModel):
     """アラーム一覧のクエリパラメータのスキーマ"""
 
-    begin_time: str = Field(
+    begin_time: str | None = Field(
         description="アラームが発生したと思われる時間帯の開始時間を指定します。(指定しない場合は7日前からのアラームを取得します。)",
         example="2025-08-15T08:53:00+09:00, 2025-08-15T08:53:00, 2025-08-15",
         default=None,
     )
-    end_time: str = Field(
+    end_time: str | None = Field(
         description="アラームが発生したと思われる時間帯の終了時間を指定します。(指定しない場合は現在までのアラームを取得します。)",
         example="2025-08-15T08:53:00+09:00, 2025-08-15T08:53:00, 2025-08-15",
         default=None,
+    )
+    days_ago_begin: int | None = Field(
+        description="n日前以降に発生したアラームを取得します。指定した日数の過去日付で、アラームが発生したと思われる時間帯の開始日を指定します。",
+        example=7,
+        default=None,
+    )
+    days_ago_end: int | None = Field(
+        description="n日前以前に発生したアラームを取得します。指定した日数の過去日付で、アラームが発生したと思われる時間帯の終了日を指定します。",
+        example=3,
+        default=None,
+    )
+    hours_ago_begin: int | None = Field(
+        description="n時間前以降に発生したアラームを取得します。指定した時間数の過去で、アラームが発生したと思われる時間帯の開始時間を指定します。",
+        example=12,
+        default=None,
+    )
+    hours_ago_end: int | None = Field(
+        description="n時間前以前に発生したアラームを取得します。指定した時間数の過去で、アラームが発生したと思われる時間帯の終了時間を指定します。",
+        example=3,
+        default=None,
+    )
+    statuses: List[str] | None = Field(
+        description="アラームのステータスを指定します。",
+        default=None,
+        example=["red, yellow"],
+        enum=["red", "yellow", "green", "gray"],
+    )
+    alarm_sources: List[str] | None = Field(
+        description="アラームのソースを指定します。",
+        default=None,
+        example=["host01"],
+    )
+    acknowledged: bool | None = Field(
+        description="アラームが確認済みかどうかを指定します。",
+        default=None,
+        example=False,
     )
     offset: int = Field(
         description="アラームを取得する際の開始位置を指定します。",
@@ -29,12 +65,25 @@ class AlarmListSearchSchema(BaseModel):
         ge=1,
         le=1000,
     )
-    vcenter: str = Field(
+    vcenter: str | None = Field(
         description="vCenterの名前を指定します。",
         default=None,
         example="vcenter01",
     )
     model_config = {"extra": "forbid"}
+
+    @model_validator(mode="before")
+    def check_mutually_exclusive(cls, values):
+        time_keys = ["begin_time", "end_time"]
+        days_keys = ["days_ago_begin", "days_ago_end"]
+        hours_keys = ["hours_ago_begin", "hours_ago_end"]
+        time_params = [k for k in values.keys() if values[k] is not None and k in time_keys]
+        days_ago_params = [k for k in values.keys() if values[k] is not None and k in days_keys]
+        hours_ago_params = [k for k in values.keys() if values[k] is not None and k in hours_keys]
+
+        if bool(len(time_params) > 0) + bool(len(days_ago_params) > 0) + bool(len(hours_ago_params) > 0) > 1:
+            raise ValueError("*_time, days_ago_*, hours_ago_* パラメータはいずれか1種類のみを指定してください。")
+        return values
 
 
 class AlarmResponseSchema(BaseModel):
