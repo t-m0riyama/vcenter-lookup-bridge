@@ -13,8 +13,11 @@ services:
       # ROOTパス（リバースプロキシは以下で動作させる場合に、変更する）
       - VLB_ROOT_PATH=/vcenter-lookup-bridge
 
-      # vCenterのWeb Service APIを呼び出す際、同時に取得するオブジェクト巣の最大数
+      # vCenterのWeb Service APIを呼び出す際、同時に取得するオブジェクト数の最大値
       - VLB_MAX_RETRIEVE_VCENTER_OBJECTS=2000
+
+      # vCenterのWeb Service APIを呼び出す際、同時に取得するイベント数の最大値
+      - VLB_MAX_RETRIEVE_EVENTS_PER_VCENTER=1000
 
       # 1つのリクエストに対して、複数のvCenterのWeb Service APIを呼び出す際、利用する最大スレッド数
       # 接続先vCenterの数以下に設定する
