@@ -7,39 +7,39 @@ class AlarmListSearchSchema(BaseModel):
     """アラーム一覧のクエリパラメータのスキーマ"""
 
     begin_time: str | None = Field(
-        description="アラームが発生したと思われる時間帯の開始時間を指定します。(指定しない場合は7日前からのアラームを取得します。)",
+        description="アラームが発生したと思われる時間帯の開始時間を指定します。(指定しない場合は7日前からのアラームを取得します。) \\*\\_time, days_ago\\_\\*, hours_ago\\_\\* パラメータはいずれか1種類のみを指定してください。",
         example="2025-08-15T08:53:00+09:00, 2025-08-15T08:53:00, 2025-08-15",
         default=None,
     )
     end_time: str | None = Field(
-        description="アラームが発生したと思われる時間帯の終了時間を指定します。(指定しない場合は現在までのアラームを取得します。)",
+        description="アラームが発生したと思われる時間帯の終了時間を指定します。(指定しない場合は現在までのアラームを取得します。) \\*\\_time, days_ago\\_\\*, hours_ago\\_\\* パラメータはいずれか1種類のみを指定してください。",
         example="2025-08-15T08:53:00+09:00, 2025-08-15T08:53:00, 2025-08-15",
         default=None,
     )
     days_ago_begin: int | None = Field(
-        description="n日前以降に発生したアラームを取得します。指定した日数の過去日付で、アラームが発生したと思われる時間帯の開始日を指定します。",
+        description="n日前以降に発生したアラームを取得します。指定した日数の過去日付で、アラームが発生したと思われる時間帯の開始日を指定します。\\*\\_time, days_ago\\_\\*, hours_ago\\_\\* パラメータはいずれか1種類のみを指定してください。",
         example=7,
         default=None,
     )
     days_ago_end: int | None = Field(
-        description="n日前以前に発生したアラームを取得します。指定した日数の過去日付で、アラームが発生したと思われる時間帯の終了日を指定します。",
+        description="n日前以前に発生したアラームを取得します。指定した日数の過去日付で、アラームが発生したと思われる時間帯の終了日を指定します。\\*\\_time, days_ago\\_\\*, hours_ago\\_\\* パラメータはいずれか1種類のみを指定してください。",
         example=3,
         default=None,
     )
     hours_ago_begin: int | None = Field(
-        description="n時間前以降に発生したアラームを取得します。指定した時間数の過去で、アラームが発生したと思われる時間帯の開始時間を指定します。",
+        description="n時間前以降に発生したアラームを取得します。指定した時間数の過去で、アラームが発生したと思われる時間帯の開始時間を指定します。\\*\\_time, days_ago\\_\\*, hours_ago\\_\\* パラメータはいずれか1種類のみを指定してください。",
         example=12,
         default=None,
     )
     hours_ago_end: int | None = Field(
-        description="n時間前以前に発生したアラームを取得します。指定した時間数の過去で、アラームが発生したと思われる時間帯の終了時間を指定します。",
+        description="n時間前以前に発生したアラームを取得します。指定した時間数の過去で、アラームが発生したと思われる時間帯の終了時間を指定します。\\*\\_time, days_ago\\_\\*, hours_ago\\_\\* パラメータはいずれか1種類のみを指定してください。",
         example=3,
         default=None,
     )
     statuses: List[str] | None = Field(
         description="アラームのステータスを指定します。",
         default=None,
-        example=["red, yellow"],
+        example=["red", "yellow"],
         enum=["red", "yellow", "green", "gray"],
     )
     alarm_sources: List[str] | None = Field(
@@ -82,7 +82,9 @@ class AlarmListSearchSchema(BaseModel):
         hours_ago_params = [k for k in values.keys() if values[k] is not None and k in hours_keys]
 
         if bool(len(time_params) > 0) + bool(len(days_ago_params) > 0) + bool(len(hours_ago_params) > 0) > 1:
-            raise ValueError("*_time, days_ago_*, hours_ago_* パラメータはいずれか1種類のみを指定してください。")
+            raise ValueError(
+                "\\*\\_time, days_ago\\_\\*, hours_ago\\_\\* パラメータはいずれか1種類のみを指定してください。"
+            )
         return values
 
 
