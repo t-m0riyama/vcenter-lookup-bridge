@@ -88,5 +88,8 @@ async def list_events(
                 detail=f"指定した条件のイベントは見つかりませんでした。",
             )
     except Exception as e:
-        Logging.error(f"イベント情報の一覧を取得中にエラーが発生しました: {e}")
+        if hasattr(e, "status_code") and e.status_code == 404:
+            Logging.info(f"イベント情報の一覧を取得中にエラーが発生しました: {e}")
+        else:
+            Logging.error(f"イベント情報の一覧を取得中にエラーが発生しました: {e}")
         raise e
