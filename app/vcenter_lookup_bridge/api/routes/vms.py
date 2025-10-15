@@ -83,7 +83,7 @@ async def list_vms(
                 detail=f"指定した仮想マシンフォルダ({search_params.vm_folders})中に仮想マシンは見つかりませんでした。",
             )
     except Exception as e:
-        Logging.error(f"仮想マシン情報の一覧を取得中にエラーが発生しました: {e}")
+        Logging.error(f"{request_id} 仮想マシン情報の一覧を取得中にエラーが発生しました: {e}")
         raise e
 
 

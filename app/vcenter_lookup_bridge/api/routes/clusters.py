@@ -71,5 +71,5 @@ async def list_clusters(
                 detail=f"指定した条件のクラスタは見つかりませんでした。",
             )
     except Exception as e:
-        Logging.error(f"クラスタ情報の一覧を取得中にエラーが発生しました: {e}")
+        Logging.error(f"{request_id} クラスタ情報の一覧を取得中にエラーが発生しました: {e}")
         raise e
