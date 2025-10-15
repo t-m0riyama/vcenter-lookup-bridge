@@ -49,6 +49,43 @@ class VmResponseSchema(BaseModel):
         description="仮想マシンの名前を示します。",
         example="example-vm01",
     )
+    instanceUuid: str = Field(
+        description="仮想マシンのインスタンスUUIDを示します。",
+        example="50131f3e-4ec1-2bce-10eb-23456789abcd",
+    )
+    vcenter: str | None = Field(
+        description="vCenter名を示します。",
+        example="vcenter01",
+    )
+    datacenter: str = Field(
+        description="仮想マシンのデータセンターを示します。",
+        example="DC01",
+    )
+    numCpu: int = Field(
+        description="仮想マシンのCPU数を示します。",
+        example=2,
+    )
+    memorySizeMB: int = Field(
+        description="仮想マシンのメモリサイズ(MB)を示します。",
+        example=2048,
+    )
+    vmFolder: str | None = Field(
+        description="仮想マシンのフォルダを示します。",
+        example="folder1",
+    )
+    hostname: str | None = Field(
+        description="仮想マシンのホスト名を示します。",
+        example="example-vm01",
+    )
+
+
+class VmDetailResponseSchema(BaseModel):
+    """仮想マシンの詳細情報のレスポンススキーマ"""
+
+    name: str = Field(
+        description="仮想マシンの名前を示します。",
+        example="example-vm01",
+    )
     uuid: str = Field(
         description="仮想マシンのUUIDを示します。",
         example="421d0f07-b177-f71b-9723-123456789abc",
@@ -147,7 +184,7 @@ class VmListResponseSchema(ApiResponse[List[VmResponseSchema]]):
     pass
 
 
-class VmGetResponseSchema(ApiResponse[VmResponseSchema]):
+class VmGetResponseSchema(ApiResponse[VmDetailResponseSchema]):
     """単一仮想マシンのレスポンススキーマ"""
 
     pass

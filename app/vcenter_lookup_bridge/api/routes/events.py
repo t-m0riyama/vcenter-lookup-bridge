@@ -89,7 +89,9 @@ async def list_events(
             )
     except Exception as e:
         if hasattr(e, "status_code") and e.status_code == 404:
-            Logging.info(f"イベント情報の一覧を取得中にエラーが発生しました: {e}")
+            Logging.info(f"{request_id} イベント情報の一覧を取得中にエラーが発生しました: {e}")
+        elif hasattr(e, "status_code") and e.status_code == 422:
+            Logging.info(f"{request_id} パラメータの書式不正が発生しました: {e}")
         else:
-            Logging.error(f"イベント情報の一覧を取得中にエラーが発生しました: {e}")
+            Logging.error(f"{request_id} イベント情報の一覧を取得中にエラーが発生しました: {e}")
         raise e

@@ -3,9 +3,8 @@ from typing import List, Optional
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import HTTPException
 from pyVmomi import vim
-from vcenter_lookup_bridge.schemas.host_parameter import HostResponseSchema
+from vcenter_lookup_bridge.schemas.host_parameter import HostResponseSchema, HostDetailResponseSchema
 from vcenter_lookup_bridge.utils.logging import Logging
-from vcenter_lookup_bridge.vmware.helper import Helper
 
 
 class Host(object):
@@ -138,6 +137,7 @@ class Host(object):
                     datacenter=datacenter,
                     host=host,
                     vcenter_name=vcenter_name,
+                    is_detail=False,
                 )
                 results.append(host_info)
                 host_count += 1
@@ -245,6 +245,7 @@ class Host(object):
                 datacenter=datacenter,
                 host=host,
                 vcenter_name=vcenter_name,
+                is_detail=True,
             )
         else:
             Logging.info(
@@ -263,15 +264,18 @@ class Host(object):
 
     @classmethod
     @Logging.func_logger
-    def _generate_host_info(cls, content, datacenter, host, vcenter_name: str = None) -> HostResponseSchema:
+    def _generate_host_info(
+        cls, content, datacenter, host, vcenter_name: str = None, is_detail: bool = False
+    ) -> HostResponseSchema | HostDetailResponseSchema:
         """ESXiホスト情報を生成"""
 
-        if hasattr(host, "config"):
-            # シミュレーター以外のESXiホストの場合、IPアドレスを追加
-            ip_address = host.config.network.vnic[0].spec.ip.ipAddress if host.config.network.vnic else None
-        else:
-            # シミュレーターのESXiホストの場合、ダミーのIPアドレスを追加
-            ip_address = "127.0.0.1"
+        if is_detail:
+            if hasattr(host, "config"):
+                # シミュレーター以外のESXiホストの場合、IPアドレスを追加
+                ip_address = host.config.network.vnic[0].spec.ip.ipAddress if host.config.network.vnic else None
+            else:
+                # シミュレーターのESXiホストの場合、ダミーのIPアドレスを追加
+                ip_address = "127.0.0.1"
 
         if hasattr(host, "runtime"):
             # シミュレーター以外のESXiホストの場合、電源状態を追加
@@ -284,81 +288,98 @@ class Host(object):
             # シミュレーター以外のESXiホストの場合、各種ハードウェア情報などを追加
             uuid = host.summary.hardware.uuid
             esxi_version = host.summary.config.product.version
-            esxi_version_full = host.summary.config.product.fullName
-            hardware_vendor = host.summary.hardware.vendor
-            hardware_model = host.summary.hardware.model
             num_cpu_sockets = host.summary.hardware.numCpuPkgs
             num_cpu_cores = host.summary.hardware.numCpuCores
             num_cpu_threads = host.summary.hardware.numCpuThreads
-            cpu_model = host.summary.hardware.cpuModel
             memory_size_mb = int(host.summary.hardware.memorySize / 1024 / 1024)
+            if is_detail:
+                esxi_version_full = host.summary.config.product.fullName
+                hardware_vendor = host.summary.hardware.vendor
+                hardware_model = host.summary.hardware.model
+                cpu_model = host.summary.hardware.cpuModel
         else:
             # シミュレーターのESXiホストの場合、ダミーの各種ハードウェア情報などを追加
             uuid = "99999999-1234-1234-1234-999999999999"
             esxi_version = "8.0.3"
-            esxi_version_full = "VMware ESXi 8.0.3 build-12345"
-            hardware_vendor = "Dummy Vendor"
-            hardware_model = "Dummy Model 000"
             num_cpu_sockets = 1
             num_cpu_cores = 32
             num_cpu_threads = 64
-            cpu_model = "Dummy CPU Model 000"
             memory_size_mb = 65536
+            if is_detail:
+                esxi_version_full = "VMware ESXi 8.0.3 build-12345"
+                hardware_vendor = "Dummy Vendor"
+                hardware_model = "Dummy Model 000"
+                cpu_model = "Dummy CPU Model 000"
 
-        # データストア一覧の取得
-        datastores = []
-        for ds in host.datastore:
-            datastores.append(
-                {
-                    "name": ds.name,
-                    "status": ds.overallStatus,
-                    "type": ds.summary.type,
-                    "capacityGB": int(ds.summary.capacity / 1024 / 1024 / 1024),
-                    "freeSpaceGB": int(ds.summary.freeSpace / 1024 / 1024 / 1024),
-                }
-            )
-
-        # ポートグループ一覧の取得
-        portgroups = []
-        for net in host.network:
-            portgroups.append({"name": net.name})
-
-        # vSwitch一覧の取得
-        vswitches = []
-        if hasattr(host, "config"):
-            if hasattr(host.config, "network"):
-                # 標準スイッチ一覧を取得
-                for vss in host.config.network.vswitch:
-                    vswitches.append({"name": vss.name})
-
-                # 分散スイッチ一覧を取得
-                dvs_view = content.viewManager.CreateContainerView(
-                    content.rootFolder, [vim.DistributedVirtualSwitch], True
+        if is_detail:
+            # データストア一覧の取得
+            datastores = []
+            for ds in host.datastore:
+                datastores.append(
+                    {
+                        "name": ds.name,
+                        "status": ds.overallStatus,
+                        "type": ds.summary.type,
+                        "capacityGB": int(ds.summary.capacity / 1024 / 1024 / 1024),
+                        "freeSpaceGB": int(ds.summary.freeSpace / 1024 / 1024 / 1024),
+                    }
                 )
-                for dvs in dvs_view.view:
-                    vswitches.append({"name": dvs.name})
 
-        # IPアドレスが取得できない場合は、Noneを返す
-        host_info = {
-            "vcenter": vcenter_name,
-            "datacenter": datacenter.name,
-            "cluster": host.parent.name,
-            "name": host.name,
-            "uuid": uuid,
-            "status": host.overallStatus,
-            "powerState": power_state,
-            "ipAddress": ip_address,
-            "esxiVersion": esxi_version,
-            "esxiVersionFull": esxi_version_full,
-            "hardwareVendor": hardware_vendor,
-            "hardwareModel": hardware_model,
-            "numCpuSockets": num_cpu_sockets,
-            "numCpuCores": num_cpu_cores,
-            "numCpuThreads": num_cpu_threads,
-            "cpuModel": cpu_model,
-            "memorySizeMB": memory_size_mb,
-            "datastores": datastores,
-            "portgroups": portgroups,
-            "vswitches": vswitches,
-        }
-        return HostResponseSchema(**host_info)
+            # ポートグループ一覧の取得
+            portgroups = []
+            for net in host.network:
+                portgroups.append({"name": net.name})
+
+            # vSwitch一覧の取得
+            vswitches = []
+            if hasattr(host, "config"):
+                if hasattr(host.config, "network"):
+                    # 標準スイッチ一覧を取得
+                    for vss in host.config.network.vswitch:
+                        vswitches.append({"name": vss.name})
+
+                    # 分散スイッチ一覧を取得
+                    dvs_view = content.viewManager.CreateContainerView(
+                        content.rootFolder, [vim.DistributedVirtualSwitch], True
+                    )
+                    for dvs in dvs_view.view:
+                        vswitches.append({"name": dvs.name})
+
+        if is_detail:
+            host_info = {
+                "vcenter": vcenter_name,
+                "datacenter": datacenter.name,
+                "cluster": host.parent.name,
+                "name": host.name,
+                "uuid": uuid,
+                "status": host.overallStatus,
+                "powerState": power_state,
+                "ipAddress": ip_address,
+                "esxiVersion": esxi_version,
+                "esxiVersionFull": esxi_version_full,
+                "hardwareVendor": hardware_vendor,
+                "hardwareModel": hardware_model,
+                "numCpuSockets": num_cpu_sockets,
+                "numCpuCores": num_cpu_cores,
+                "numCpuThreads": num_cpu_threads,
+                "cpuModel": cpu_model,
+                "memorySizeMB": memory_size_mb,
+                "datastores": datastores,
+                "portgroups": portgroups,
+                "vswitches": vswitches,
+            }
+            return HostDetailResponseSchema(**host_info)
+        else:
+            host_info = {
+                "vcenter": vcenter_name,
+                "datacenter": datacenter.name,
+                "name": host.name,
+                "uuid": uuid,
+                "status": host.overallStatus,
+                "esxiVersion": esxi_version,
+                "numCpuSockets": num_cpu_sockets,
+                "numCpuCores": num_cpu_cores,
+                "numCpuThreads": num_cpu_threads,
+                "memorySizeMB": memory_size_mb,
+            }
+            return HostResponseSchema(**host_info)

@@ -88,7 +88,9 @@ async def list_alarms(
             )
     except Exception as e:
         if hasattr(e, "status_code") and e.status_code == 404:
-            Logging.info(f"トリガー済みのアラーム情報を取得中にエラーが発生しました: {e}")
+            Logging.info(f"{request_id} トリガー済みのアラーム情報を取得中にエラーが発生しました: {e}")
+        elif hasattr(e, "status_code") and e.status_code == 422:
+            Logging.info(f"{request_id} パラメータの書式不正が発生しました: {e}")
         else:
-            Logging.error(f"トリガー済みのアラーム情報を取得中にエラーが発生しました: {e}")
+            Logging.error(f"{request_id} トリガー済みのアラーム情報を取得中にエラーが発生しました: {e}")
         raise e

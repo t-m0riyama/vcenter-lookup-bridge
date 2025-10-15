@@ -9,7 +9,7 @@ from vcenter_lookup_bridge.schemas.host_parameter import (
     HostListSearchSchema,
     HostListResponseSchema,
     HostGetResponseSchema,
-    HostResponseSchema,
+    HostDetailResponseSchema,
     HostSearchSchema,
 )
 from vcenter_lookup_bridge.utils.logging import Logging
@@ -123,7 +123,7 @@ async def get_host(
             host_uuid=host_uuid,
             request_id=request_id,
         )
-        if isinstance(host, HostResponseSchema):
+        if isinstance(host, HostDetailResponseSchema):
             return ApiResponse.create(
                 results=host,
                 success=True,

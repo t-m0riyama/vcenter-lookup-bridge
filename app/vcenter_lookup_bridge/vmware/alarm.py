@@ -68,6 +68,8 @@ class Alarm(object):
                 Logging.info(f"{request_id} vCenter({vcenter_name})からのトリガー済みアラーム情報取得に成功")
                 all_alarms.extend(alarms)
                 total_alarm_count = len(all_alarms)
+            except ValueError as e:
+                raise HTTPException(status_code=422, detail=str(e))
             except Exception as e:
                 Logging.error(f"{request_id} vCenter({vcenter_name})からのトリガー済みアラーム情報取得に失敗: {e}")
         else:
@@ -107,6 +109,8 @@ class Alarm(object):
                     if len(all_alarms) > max_results:
                         all_alarms = all_alarms[:max_results]
 
+                except ValueError as e:
+                    raise HTTPException(status_code=422, detail=str(e))
                 except Exception as e:
                     Logging.error(f"{request_id} vCenter({vcenter_name})からのトリガー済みアラーム情報取得に失敗: {e}")
 

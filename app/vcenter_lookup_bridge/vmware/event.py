@@ -70,6 +70,8 @@ class Event(object):
                 Logging.info(f"{request_id} vCenter({vcenter_name})からのイベント情報取得に成功")
                 all_events.extend(events)
                 total_event_count = len(all_events)
+            except ValueError as e:
+                raise HTTPException(status_code=422, detail=f"日付/時刻パラメータの書式が不正です。")
             except Exception as e:
                 Logging.error(f"{request_id} vCenter({vcenter_name})からのイベント情報取得に失敗: {e}")
         else:
@@ -110,6 +112,8 @@ class Event(object):
                     if len(all_events) > max_results:
                         all_events = all_events[:max_results]
 
+                except ValueError as e:
+                    raise HTTPException(status_code=422, detail=f"日付/時刻パラメータの書式が不正です。")
                 except Exception as e:
                     Logging.error(f"{request_id} vCenter({vcenter_name})からのイベント情報取得に失敗: {e}")
 

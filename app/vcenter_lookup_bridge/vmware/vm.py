@@ -3,7 +3,7 @@ from typing import List, Optional
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import HTTPException
 from pyVmomi import vim
-from vcenter_lookup_bridge.schemas.vm_parameter import VmResponseSchema
+from vcenter_lookup_bridge.schemas.vm_parameter import VmDetailResponseSchema, VmResponseSchema
 from vcenter_lookup_bridge.utils.logging import Logging
 from vcenter_lookup_bridge.vmware.helper import Helper
 
@@ -154,6 +154,7 @@ class Vm(object):
                         vm_folder=vm_folder,
                         vm=vm,
                         vcenter_name=vcenter_name,
+                        is_detail=False,
                     )
                     results.append(vm_info)
                     vm_count += 1
@@ -167,7 +168,7 @@ class Vm(object):
         service_instances: dict,
         instance_uuid: str,
         request_id: str = None,
-    ) -> VmResponseSchema:
+    ) -> VmDetailResponseSchema:
         """指定したインスタンスUUIDの仮想マシンを取得"""
 
         result = None
@@ -235,7 +236,7 @@ class Vm(object):
         service_instances: dict,
         instance_uuid: str,
         request_id: str = None,
-    ) -> VmResponseSchema:
+    ) -> VmDetailResponseSchema:
         """インスタンスUUIDとvCenterを指定して、仮想マシン情報を取得"""
 
         # 指定されたvCenterのService Instanceを取得
@@ -262,6 +263,7 @@ class Vm(object):
                 vm_folder=None,
                 vm=vm,
                 vcenter_name=vcenter_name,
+                is_detail=True,
             )
         else:
             Logging.info(
@@ -281,86 +283,100 @@ class Vm(object):
     @classmethod
     @Logging.func_logger
     def _generate_vm_info(
-        cls, content, datacenter, vm_folder: Optional[str], vm, vcenter_name: str = None
-    ) -> VmResponseSchema:
+        cls, content, datacenter, vm_folder: Optional[str], vm, vcenter_name: str = None, is_detail: bool = False
+    ) -> VmResponseSchema | VmDetailResponseSchema:
         """仮想マシン情報を生成"""
 
         disk_devices = []
         network_devices = []
 
-        if hasattr(vm, "config"):
-            # シミュレーター以外の仮想マシンの場合、仮想ディスクとポートグループを追加
-            for device in vm.config.hardware.device:
-                if isinstance(device, vim.vm.device.VirtualDisk):
-                    disk_devices.append(
-                        {
-                            "label": device.deviceInfo.label,
-                            "datastore": device.backing.datastore.name,
-                            "sizeGB": int(device.capacityInKB / 1024**2),
-                        }
-                    )
-                elif isinstance(device, vim.vm.device.VirtualVmxnet3):
-                    if isinstance(
-                        device.backing,
-                        vim.vm.device.VirtualEthernetCard.DistributedVirtualPortBackingInfo,
-                    ):
-                        portgroup_name = Helper.get_object_by_object_key(
-                            content=content,
-                            vimtype=vim.dvs.DistributedVirtualPortgroup,
-                            object_key=device.backing.port.portgroupKey,
+        if is_detail:
+            if hasattr(vm, "config"):
+                # シミュレーター以外の仮想マシンの場合、仮想ディスクとポートグループを追加
+                for device in vm.config.hardware.device:
+                    if isinstance(device, vim.vm.device.VirtualDisk):
+                        disk_devices.append(
+                            {
+                                "label": device.deviceInfo.label,
+                                "datastore": device.backing.datastore.name,
+                                "sizeGB": int(device.capacityInKB / 1024**2),
+                            }
                         )
-                    else:
-                        portgroup_name = device.backing.deviceName
+                    elif isinstance(device, vim.vm.device.VirtualVmxnet3):
+                        if isinstance(
+                            device.backing,
+                            vim.vm.device.VirtualEthernetCard.DistributedVirtualPortBackingInfo,
+                        ):
+                            portgroup_name = Helper.get_object_by_object_key(
+                                content=content,
+                                vimtype=vim.dvs.DistributedVirtualPortgroup,
+                                object_key=device.backing.port.portgroupKey,
+                            )
+                        else:
+                            portgroup_name = device.backing.deviceName
 
-                    network_devices.append(
-                        {
-                            "label": device.deviceInfo.label,
-                            "macAddress": device.macAddress,
-                            "portgroup": portgroup_name,
-                            "connected": device.connectable.connected,
-                            "startConnected": device.connectable.startConnected,
-                        }
-                    )
-        else:
-            # vCenterのシミュレータなどを利用している場合、仮想ディスクとポートグループにダミーデータを追加
-            disk_devices.append(
-                {
-                    "label": "Dummy Label",
-                    "datastore": "Dummy Datastore",
-                    "sizeGB": 100,
-                }
-            )
-            portgroup_name = "Dummy PortGroup"
-            network_devices.append(
-                {
-                    "label": "Dummy Label",
-                    "macAddress": "00:11:22:33:44:55",
-                    "portgroup": portgroup_name,
-                    "connected": True,
-                    "startConnected": True,
-                }
-            )
+                        network_devices.append(
+                            {
+                                "label": device.deviceInfo.label,
+                                "macAddress": device.macAddress,
+                                "portgroup": portgroup_name,
+                                "connected": device.connectable.connected,
+                                "startConnected": device.connectable.startConnected,
+                            }
+                        )
+            else:
+                # vCenterのシミュレータなどを利用している場合、仮想ディスクとポートグループにダミーデータを追加
+                disk_devices.append(
+                    {
+                        "label": "Dummy Label",
+                        "datastore": "Dummy Datastore",
+                        "sizeGB": 100,
+                    }
+                )
+                portgroup_name = "Dummy PortGroup"
+                network_devices.append(
+                    {
+                        "label": "Dummy Label",
+                        "macAddress": "00:11:22:33:44:55",
+                        "portgroup": portgroup_name,
+                        "connected": True,
+                        "startConnected": True,
+                    }
+                )
 
         # ゲストOSの情報を取得できない場合は、vm.guestの属性についてNoneを返す
-        vm_info = {
-            "vcenter": vcenter_name,
-            "datacenter": datacenter.name,
-            "cluster": vm.summary.runtime.host.parent.name,
-            "esxiHostname": vm.summary.runtime.host.name,
-            "hostname": vm.guest.hostName if hasattr(vm, "guest") else None,
-            "ipAddress": vm.guest.ipAddress if hasattr(vm, "guest") else None,
-            "vmFolder": vm_folder,
-            "powerState": vm.summary.runtime.powerState,
-            "diskDevices": disk_devices,
-            "networkDevices": network_devices,
-            "uuid": vm.summary.config.uuid,
-            "instanceUuid": vm.summary.config.instanceUuid,
-            "name": vm.summary.config.name,
-            "numCpu": vm.summary.config.numCpu,
-            "memorySizeMB": vm.summary.config.memorySizeMB,
-            "template": vm.summary.config.template,
-            "vmPathName": vm.summary.config.vmPathName,
-            "guestFullName": vm.summary.config.guestFullName,
-            "hwVersion": vm.summary.config.hwVersion,
-        }
-        return VmResponseSchema(**vm_info)
+        if is_detail:
+            vm_info = {
+                "vcenter": vcenter_name,
+                "datacenter": datacenter.name,
+                "cluster": vm.summary.runtime.host.parent.name,
+                "esxiHostname": vm.summary.runtime.host.name,
+                "ipAddress": vm.guest.ipAddress if hasattr(vm, "guest") else None,
+                "hostname": vm.guest.hostName if hasattr(vm, "guest") else None,
+                "vmFolder": vm_folder,
+                "powerState": vm.summary.runtime.powerState,
+                "diskDevices": disk_devices,
+                "networkDevices": network_devices,
+                "uuid": vm.summary.config.uuid,
+                "instanceUuid": vm.summary.config.instanceUuid,
+                "name": vm.summary.config.name,
+                "numCpu": vm.summary.config.numCpu,
+                "memorySizeMB": vm.summary.config.memorySizeMB,
+                "template": vm.summary.config.template,
+                "vmPathName": vm.summary.config.vmPathName,
+                "guestFullName": vm.summary.config.guestFullName,
+                "hwVersion": vm.summary.config.hwVersion,
+            }
+            return VmDetailResponseSchema(**vm_info)
+        else:
+            vm_info = {
+                "vcenter": vcenter_name,
+                "datacenter": datacenter.name,
+                "hostname": vm.guest.hostName if hasattr(vm, "guest") else None,
+                "vmFolder": vm_folder,
+                "name": vm.summary.config.name,
+                "instanceUuid": vm.summary.config.instanceUuid,
+                "numCpu": vm.summary.config.numCpu,
+                "memorySizeMB": vm.summary.config.memorySizeMB,
+            }
+            return VmResponseSchema(**vm_info)

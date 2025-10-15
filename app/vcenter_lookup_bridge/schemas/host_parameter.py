@@ -57,6 +57,52 @@ class HostResponseSchema(BaseModel):
         description="ESXiホストのバージョンを示します。",
         example="8.0.3",
     )
+    vcenter: str | None = Field(
+        description="vCenter名を示します。",
+        example="vcenter01",
+    )
+    datacenter: str = Field(
+        description="ESXiホストのデータセンターを示します。",
+        example="DC01",
+    )
+    numCpuSockets: int = Field(
+        description="ESXiホストのCPUソケット数を示します。",
+        example=1,
+    )
+    numCpuCores: int = Field(
+        description="ESXiホストのCPUコア数を示します。",
+        example=32,
+    )
+    numCpuThreads: int = Field(
+        description="ESXiホストのCPUスレッド数を示します。",
+        example=64,
+    )
+    memorySizeMB: int = Field(
+        description="ESXiホストのメモリサイズ(MB)を示します。",
+        example=65536,
+    )
+
+
+class HostDetailResponseSchema(BaseModel):
+    """ESXiホストの詳細情報のレスポンススキーマ"""
+
+    name: str = Field(
+        description="ESXiホストの名前(ホスト名)を示します。",
+        example="esxi01",
+    )
+    uuid: str = Field(
+        description="ESXiホストのUUIDを示します。",
+        example="99999999-1234-1234-1234-999999999999",
+    )
+    status: str = Field(
+        description="ESXiホストのステータスを示します。",
+        example="green",
+        enum=["green", "yellow", "red", "gray"],
+    )
+    esxiVersion: str = Field(
+        description="ESXiホストのバージョンを示します。",
+        example="8.0.3",
+    )
     esxiVersionFull: str = Field(
         description="ESXiホストのビルド番号を含む、バージョンを示します。",
         example="VMware ESXi 8.0.3 build-24280767",
@@ -150,7 +196,7 @@ class HostListResponseSchema(ApiResponse[List[HostResponseSchema]]):
     pass
 
 
-class HostGetResponseSchema(ApiResponse[HostResponseSchema]):
+class HostGetResponseSchema(ApiResponse[HostDetailResponseSchema]):
     """単一ESXiホストのレスポンススキーマ"""
 
     pass

@@ -20,21 +20,25 @@ class AlarmListSearchSchema(BaseModel):
         description="n日前以降に発生したアラームを取得します。指定した日数の過去日付で、アラームが発生したと思われる時間帯の開始日を指定します。\\*\\_time, days_ago\\_\\*, hours_ago\\_\\* パラメータはいずれか1種類のみを指定してください。",
         example=7,
         default=None,
+        ge=1,
     )
     days_ago_end: int | None = Field(
         description="n日前以前に発生したアラームを取得します。指定した日数の過去日付で、アラームが発生したと思われる時間帯の終了日を指定します。\\*\\_time, days_ago\\_\\*, hours_ago\\_\\* パラメータはいずれか1種類のみを指定してください。",
         example=3,
         default=None,
+        ge=0,
     )
     hours_ago_begin: int | None = Field(
         description="n時間前以降に発生したアラームを取得します。指定した時間数の過去で、アラームが発生したと思われる時間帯の開始時間を指定します。\\*\\_time, days_ago\\_\\*, hours_ago\\_\\* パラメータはいずれか1種類のみを指定してください。",
         example=12,
         default=None,
+        ge=1,
     )
     hours_ago_end: int | None = Field(
         description="n時間前以前に発生したアラームを取得します。指定した時間数の過去で、アラームが発生したと思われる時間帯の終了時間を指定します。\\*\\_time, days_ago\\_\\*, hours_ago\\_\\* パラメータはいずれか1種類のみを指定してください。",
         example=3,
         default=None,
+        ge=0,
     )
     statuses: List[str] | None = Field(
         description="アラームのステータスを指定します。",

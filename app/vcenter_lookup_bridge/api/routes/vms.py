@@ -9,7 +9,7 @@ from vcenter_lookup_bridge.schemas.vm_parameter import (
     VmListSearchSchema,
     VmListResponseSchema,
     VmGetResponseSchema,
-    VmResponseSchema,
+    VmDetailResponseSchema,
     VmSearchSchema,
 )
 from vcenter_lookup_bridge.utils.logging import Logging
@@ -124,7 +124,7 @@ async def get_vm(
             instance_uuid=vm_instance_uuid,
             request_id=request_id,
         )
-        if isinstance(vm, VmResponseSchema):
+        if isinstance(vm, VmDetailResponseSchema):
             return ApiResponse.create(
                 results=vm,
                 success=True,
