@@ -89,7 +89,7 @@ async def list_hosts(
 @router.get(
     "/{host_uuid}",
     response_model=HostGetResponseSchema,
-    description="ESXiホストのUUIDを指定して、単一のESXiホストの情報を取得します。",
+    description="ESXiホストのUUIDを指定して、単一のESXiホストの詳細情報を取得します。",
     responses={
         404: {
             "description": "指定したESXiホストUUIDを持つESXiホストが見つからない場合に返されます。",

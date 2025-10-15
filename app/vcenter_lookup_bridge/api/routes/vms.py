@@ -90,7 +90,7 @@ async def list_vms(
 @router.get(
     "/{vm_instance_uuid}",
     response_model=VmGetResponseSchema,
-    description="インスタンスUUIDを指定して、単一の仮想マシンの情報を取得します。",
+    description="インスタンスUUIDを指定して、単一の仮想マシンの詳細情報を取得します。",
     responses={
         404: {
             "description": "指定したインスタンスUUIDを持つ仮想マシンが見つからない場合に返されます。",
